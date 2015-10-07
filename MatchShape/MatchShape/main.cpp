@@ -80,11 +80,15 @@ int main(int, char)
 
 
 	// READ IMAGE
+	
 	Mat image = imread("stella3.jpg");
 	Mat result = star.findStarInImg(image, 92.0);
+
+
+
 	imshow("FINAL RESULT", result);
 	waitKey(0);
-
+	
 
 	// VIDEO CAPTURE
 	/*
@@ -109,7 +113,6 @@ int main(int, char)
 	*/
 	
 	
-
-	
+	waitKey(0);
 	return 0;
 }
