@@ -37,5 +37,9 @@ private:
 	double epsilonFactor;
 
 	cv::Size baseSize, imgSize;
+	double focus,
+		minFocus,
+		maxFocus;
+	
 	
 };

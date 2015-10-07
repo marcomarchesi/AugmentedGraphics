@@ -5,7 +5,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#define DEBUG_MODE
+//#define DEBUG_MODE
 
 using namespace cv;
 using namespace std;
@@ -30,6 +30,10 @@ Star::Star(cv::Mat starImage) : thresholdMinValue(127), epsilonFactor(0.05), bas
 #endif
 
 	centroids = findCentroidsDistribution(starShape);
+
+	minFocus = 0.7;
+	maxFocus = 0.7;
+	focus = minFocus;
 }
 
 // calculate the compatibility between a contour and the base starShape
@@ -46,8 +50,11 @@ double Star::checkContourPercentageCompatibility(std::vector<cv::Point> contour)
 	drawContours(tempImg, vect, -1, cv::Scalar(255), 1, CV_AA);
 #endif
 
+	// ---- SHAPE'S POINT FILTER ----
+	/*
 	if (contour.size() != 8)
 		return 0.0;
+	*/
 
 	double hamming = matchShapes(contour, starShape, CV_CONTOURS_MATCH_I1, 0.0);
 
@@ -116,6 +123,10 @@ std::vector<std::vector<cv::Point>> Star::findStarsInContours(
 	double precision,
 	cv::Mat gray)
 {
+#ifdef DEBUG_MODE
+	cout << "Contours founded: " << to_string(contours.size()) << endl;
+#endif
+
 	vector<vector<Point>> stars;	
 
 	// ID -- hamming
@@ -126,11 +137,13 @@ std::vector<std::vector<cv::Point>> Star::findStarsInContours(
 		vector<Point> distribution = findCentroidsDistribution(contours[i]);
 		double correlation = correlationWithBase(distribution);
 
-		if (correlation < 0.90)
+		if (correlation < 0.91)
 			continue;
 
+#ifdef DEBUG_MODE
 		cout << "Correlation " << to_string(i) << " --- " << to_string(correlation) << endl;
-		
+#endif
+
 		double hamming = checkContourPercentageCompatibility(contours[i]);
 		if (hamming == 0)
 			continue;
@@ -150,9 +163,6 @@ std::vector<std::vector<cv::Point>> Star::findStarsInContours(
 		cout << to_string(i) << " Contour Hamming Percentage " << " " << to_string(hamming) << endl << endl;
 #endif
 		
-		
-
-
 		hammingValues.push_back(pair<int, double>(i, hamming));
 		
 	}
@@ -162,15 +172,19 @@ std::vector<std::vector<cv::Point>> Star::findStarsInContours(
 		if (hammingValues[i].second >= precision && hammingValues[i].second != 100.0)
 			stars.push_back(contours.at(hammingValues[i].first));
 	}
-	
-	// Now i have contours that have 8 points with valid hamming distance
-		
+
+#ifdef DEBUG_MODE
+	cout << "Possible stars: " << to_string(stars.size()) << endl;
+#endif
+
+	// Now i have contours that have 8 points with valid hamming distance		
 	// i want to remove contours whit low distance between point
 
+	
+
+	// CHECK MIN SIDE LENGTH (EMIPIRIC)
+	/*
 	vector<vector<Point>> starsFiltred;
-
-	cout << "_____________________________";
-
 	for (int i = 0; i < stars.size(); i++)
 	{
 		float minDist = numeric_limits<float>::max();
@@ -185,9 +199,10 @@ std::vector<std::vector<cv::Point>> Star::findStarsInContours(
 		if (minDist > 100)
 			starsFiltred.push_back(stars[i]);
 	}
-	
-
 	return starsFiltred;
+	*/
+
+	return stars;
 }
 
 
@@ -205,6 +220,23 @@ cv::Mat Star::findStarInImg(cv::Mat img, double precision)
 		resize(img, img, small);
 	}
 
+	// ---- CREATE FOCUS RECT ----
+	
+#ifdef DEBUG_MODE
+	cout << "focus: " << to_string(focus) << endl;
+#endif
+
+	Point centre(img.size().width / 2, img.size().height / 2);
+
+	int focusHeight = img.size().height * focus;
+	int focusWidth = img.size().width * focus;
+	int x = centre.x - focusWidth / 2;
+	int y = centre.y - focusHeight / 2;
+
+	Rect focusRect(x, y, focusWidth, focusHeight);	
+
+	// -----------------------------------------------------------
+
 	imgSize = img.size();
 	Mat gray(img.size(), CV_8UC1);
 	Mat thresh(img.size(), CV_8UC1);
@@ -212,18 +244,19 @@ cv::Mat Star::findStarInImg(cv::Mat img, double precision)
 	cvtColor(img, gray, CV_BGR2GRAY);
 
 	// PERFORM OPENING (Erosion --> Dilation)
+	
+	int erosion_size = 5;
+	int dilation_size = 5;
 
-	int erosion_size = 2;
-	int dilation_size = 2;
-
-	Mat element = getStructuringElement(2, Size(2 * erosion_size, 2 * erosion_size), Point(erosion_size, erosion_size));
+	Mat element = getStructuringElement(0, Size(2 * erosion_size, 2 * erosion_size), Point(erosion_size, erosion_size));
 	erode(gray, gray, element);
-
-	dilate(gray, gray, element);
-
+	dilate(gray, gray, element);	
+	
 	// need a loop that decreese the threshold min value if the image is too black
 	// for now 60 is ok
 	threshold(gray, thresh, 60, 255, THRESH_BINARY);
+
+	//imshow("Thresh", thresh);
 
 	vector<vector<Point>> contours;
 	vector<Point> approx;
@@ -233,13 +266,21 @@ cv::Mat Star::findStarInImg(cv::Mat img, double precision)
 
 	for (int i = 0; i < contours.size(); i++)
 	{
-		if (contours[i].size() < 5)
+		if (contours[i].size() < 8)
 			continue;
-		
+
 		double epsilon = contours[i].size() * 0.04;
 		approxPolyDP(contours[i], approx, epsilon, true);
-		
-		approxContours.push_back(approx);
+
+		Rect box = boundingRect(approx);
+
+		if (box.x >= focusRect.x &&
+			box.y >= focusRect.y &&
+			(box.x + box.width) <= (focusRect.x + focusRect.width) &&
+			(box.y + box.height) <= focusRect.y + focusRect.height)
+		{
+			approxContours.push_back(approx);
+		}
 	}
 
 #ifdef DEBUG_MODE
@@ -261,10 +302,19 @@ cv::Mat Star::findStarInImg(cv::Mat img, double precision)
 			line(starMask, stars[i][j], stars[i][(j + 1) % stars[i].size()], Scalar(255), 2, CV_AA);
 		}		
 	}
-
-
-	
+	rectangle(gray, focusRect, Scalar(255), 2, CV_AA);
+	/*
+	if (stars.size() == 0)
+	{
+		if (focus < maxFocus)
+			focus += 0.1;
+		else
+			focus = minFocus;
+	}
+	*/
 	gray += starMask;
+
+	// SAVE THE IMAGE
 	/*
 #ifdef DEBUG_MODE	
 	srand(time(NULL));
@@ -272,6 +322,7 @@ cv::Mat Star::findStarInImg(cv::Mat img, double precision)
 	imwrite("FindStarContours_" + to_string(id), gray);
 #endif
 	*/
+
 	return gray;
 }
 
