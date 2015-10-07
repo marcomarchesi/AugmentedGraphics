@@ -123,6 +123,7 @@ std::vector<std::vector<cv::Point>> Star::findStarsInContours(
 	double precision,
 	cv::Mat gray)
 {
+
 #ifdef DEBUG_MODE
 	cout << "Contours founded: " << to_string(contours.size()) << endl;
 #endif
