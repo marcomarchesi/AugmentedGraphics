@@ -1,10 +1,5 @@
 #include "Utility.h"
-
-#include <iostream>
-#include <vector>
-
-
-//#define DEBUG_MODE
+#include "commonInclude.h"
 
 using namespace cv;
 using namespace std;
@@ -40,6 +35,11 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 	if (distribution.size() != 9) return 0;
 
 	vector<Point> base = Utility::findCentroidsDistribution(baseContour);
+
+	if (base.size() != 9){
+		cout << "FATAL ERROR, number of centroids of the base shape is wrong," << endl << "control the base image or aspectedContourPoint!!!!" << endl;
+		return 0;
+	}
 
 	// FIND MEANS
 	Point meanDistr(0, 0), meanBase(0, 0);
@@ -86,7 +86,7 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 	correlation.x = product.x / sqrt(distr2.x * base2.x);
 	correlation.y = product.y / sqrt(distr2.y * base2.y);
 
-	return (correlation.x + correlation.y) / 2;
+	return ((correlation.x + correlation.y) / 2)*100;
 
 }
 

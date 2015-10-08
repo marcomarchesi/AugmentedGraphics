@@ -1,16 +1,12 @@
 #include "GenericObject.h"
 #include "Utility.h"
+#include "commonInclude.h"
 
-#include <iostream>
-#include <vector>
-
-
-//#define DEBUG_MODE
 
 using namespace cv;
 using namespace std;
 
-GenericObject::GenericObject(cv::Mat baseImage) : baseSize(baseImage.size())
+GenericObject::GenericObject(cv::Mat baseImage, int aspectedContoursPoint) : baseSize(baseImage.size())
 {
 	if (baseImage.empty())
 	{
@@ -19,22 +15,22 @@ GenericObject::GenericObject(cv::Mat baseImage) : baseSize(baseImage.size())
 		exit(1);
 	}
 
-	findObjectShape(baseImage);
-	cout << "Star shape Loaded" << endl;
+	findObjectShape(baseImage, aspectedContoursPoint);
+	cout << "Base shape Loaded" << endl;
 
 #ifdef DEBUG_MODE
 	showContour(baseShape, baseSize);
 #endif
 
-	minFocus = 0.7;
+	minFocus = 0.1;
 	maxFocus = 0.7;
 	focus = minFocus;
 }
 
 
 std::vector<std::vector<cv::Point>> GenericObject::findObjectsInContours(std::vector<std::vector<cv::Point>> contours,
-																			double precision,
-																			cv::Mat gray)
+																			double hammingThreshold,
+																			double correlationThreshold)
 {
 
 #ifdef DEBUG_MODE
@@ -51,7 +47,7 @@ std::vector<std::vector<cv::Point>> GenericObject::findObjectsInContours(std::ve
 	{
 		double correlation = utility.correlationWithBase(contours[i], baseShape);
 
-		if (correlation < 0.91)
+		if (correlation < correlationThreshold)
 			continue;
 
 #ifdef DEBUG_MODE
@@ -83,19 +79,19 @@ std::vector<std::vector<cv::Point>> GenericObject::findObjectsInContours(std::ve
 
 	for (int i = 0; i < hammingValues.size(); i++)
 	{
-		if (hammingValues[i].second >= precision && hammingValues[i].second != 100.0)
+		if (hammingValues[i].second >= hammingThreshold && hammingValues[i].second != 100.0)
 			objects.push_back(contours.at(hammingValues[i].first));
 	}
 
 #ifdef DEBUG_MODE
-	cout << "Possible valid objects: " << to_string(stars.size()) << endl;
+	cout << "Possible valid objects: " << to_string(objects.size()) << endl;
 #endif
 		
 	return objects;
 }
 
 
-cv::Mat GenericObject::findObjectsInImg(cv::Mat img, double precision){
+cv::Mat GenericObject::findObjectsInImg(cv::Mat img, double hammingThreshold, double correlationThreshold){
 
 	if (img.size().height > 800 || img.size().width > 800)
 	{
@@ -148,14 +144,21 @@ cv::Mat GenericObject::findObjectsInImg(cv::Mat img, double precision){
 	vector<Point> approx;
 	findContours(thresh, contours, CV_RETR_LIST, CHAIN_APPROX_NONE);
 
+#ifdef DEBUG_MODE
+	Mat contoursImage(img.size(), CV_8UC1);
+	contoursImage = cv::Scalar(0);
+	drawContours(contoursImage, contours, -1, cv::Scalar(255), 1, CV_AA);
+	imshow("ContoursImage", contoursImage);
+#endif
+
 	vector<vector<Point>> approxContours;
 
 	for (int i = 0; i < contours.size(); i++)
 	{
-		if (contours[i].size() < 8)
+		if (contours[i].size() < 3)
 			continue;
 
-		double epsilon = contours[i].size() * 0.04;
+		double epsilon = contours[i].size() * 0.03;
 		approxPolyDP(contours[i], approx, epsilon, true);
 
 		Rect box = boundingRect(approx);
@@ -176,7 +179,7 @@ cv::Mat GenericObject::findObjectsInImg(cv::Mat img, double precision){
 	imshow("ApproxContoursImage", approxContoursImage);
 #endif
 
-	vector<vector<Point>> stars = findObjectsInContours(approxContours, precision, gray);
+	vector<vector<Point>> stars = findObjectsInContours(approxContours, hammingThreshold, correlationThreshold);
 
 	Mat starMask(gray.size(), gray.type());
 	starMask = Scalar(0);
@@ -190,15 +193,15 @@ cv::Mat GenericObject::findObjectsInImg(cv::Mat img, double precision){
 	}
 	rectangle(gray, focusRect, Scalar(255), 2, CV_AA);
 
-	/*
+	
 	if (stars.size() == 0)
 	{
-	if (focus < maxFocus)
-	focus += 0.1;
-	else
-	focus = minFocus;
+		if (focus < maxFocus)
+			focus += 0.1;
+		else
+			focus = minFocus;
 	}
-	*/
+	
 
 	gray += starMask;
 
@@ -207,10 +210,10 @@ cv::Mat GenericObject::findObjectsInImg(cv::Mat img, double precision){
 
 
 
-void GenericObject::findObjectShape(cv::Mat starImage){
+void GenericObject::findObjectShape(cv::Mat baseImage, int aspectedContoursPoint){
 
-	Mat thresh(starImage.size(), CV_8UC1);
-	cvtColor(starImage, thresh, CV_BGR2GRAY);
+	Mat thresh(baseImage.size(), CV_8UC1);
+	cvtColor(baseImage, thresh, CV_BGR2GRAY);
 
 	threshold(thresh, thresh, 127, 255, THRESH_BINARY);
 
@@ -222,13 +225,13 @@ void GenericObject::findObjectShape(cv::Mat starImage){
 
 	for (int i = 0; i < contours.size(); i++)
 	{
-		if (contours[i].size() < 5)
+		if (contours[i].size() < 4)
 			continue;
 
 		double epsilon = contours[i].size() * 0.05;
 		approxPolyDP(contours[i], approx, epsilon, true);
 
-		if (approx.size() != 8)
+		if (approx.size() != aspectedContoursPoint)
 			continue;
 
 		conpatibleContours.push_back(approx);
@@ -237,7 +240,9 @@ void GenericObject::findObjectShape(cv::Mat starImage){
 	if (conpatibleContours.size() == 0)
 	{
 		cout << "ERROR: No valid contours found in star base image" << endl;
-		waitKey(30);
+		Mat m = Mat(Scalar(255));
+		imshow("ERROR", m);
+		waitKey(0);
 		exit(2);
 	}
 
