@@ -8,17 +8,19 @@ using namespace std;
 
 int main(int, char)
 {
-	Mat baseImage = imread("base.png");
+	Mat baseImage = imread("ninja.jpg");
 
-	MultiContoursObject multi(baseImage, 4);
+	MultiContoursObject multi(baseImage, 8, 2);
 
 
 	// READ IMAGE
 
-	Mat image = imread("mess.png");
+	/*
+	Mat image = imread("stelle.jpg");
 	if (image.empty())
 		exit(1);
-
+	*/
+	//-------------------------------------------------------------
 	/*
 	every time you press a button on the keyboard
 	you expand the active area of ​​the image,
@@ -29,19 +31,20 @@ int main(int, char)
 	Comment/uncomment the DEBUG_MODE in commonInclude.h
 	to hide/show the debug data and image
 	*/
+	//---------------------------------------------------------------
 
-	
+	/*
 	//for (;;)
 	//{
-		Mat result = multi.findObjectsInImg(image, 20.0, 20.0);
+		Mat result = multi.findObjectsInImg(image, 90.0, 90.0);
 		imshow("FINAL RESULT", result);
 		waitKey(0);
 	//}
-	
+	*/
 
 
 	// VIDEO CAPTURE
-	/*
+	
 	VideoCapture cap(0);
 	if (!cap.isOpened())
 	{
@@ -54,13 +57,13 @@ int main(int, char)
 	{
 	cap >> image;
 
-	Mat result = generic.findObjectsInImg(image, 92.0);
+	Mat result = multi.findObjectsInImg(image, 70.0, 70.0);
 	imshow("FINAL RESULT", result);
 
 	if (waitKey(30) > 0)
 	break;
 	}
-	*/
+	
 
 
 	waitKey(0);

@@ -9,7 +9,7 @@ public:
 	looking for
 	@minContourPoint: min points for contour
 	*/
-	MultiContoursObject(cv::Mat baseImage, int minContourPoint);
+	MultiContoursObject(cv::Mat baseImage, int minContourPoint, int aspectedContours);
 
 
 	/*
@@ -37,7 +37,7 @@ private:
 	looking for
 	@minContourPoint: min points for contour
 	*/
-	void findObjectShape(cv::Mat baseImage, int minContourPoint);
+	void findObjectShape(cv::Mat baseImage, int minContourPoint, int aspectedContours);
 
 	// display a contour in an image, used in DEBUG_MODE
 	void showContours(std::vector<std::vector<cv::Point>> contours, cv::Size size);

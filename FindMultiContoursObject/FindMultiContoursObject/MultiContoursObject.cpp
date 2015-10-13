@@ -5,7 +5,7 @@
 using namespace cv;
 using namespace std;
 
-MultiContoursObject::MultiContoursObject(cv::Mat baseImage, int minContourPoint)
+MultiContoursObject::MultiContoursObject(cv::Mat baseImage, int minContourPoint, int aspectedContours)
 {
 	if (baseImage.empty())
 	{
@@ -14,7 +14,7 @@ MultiContoursObject::MultiContoursObject(cv::Mat baseImage, int minContourPoint)
 		exit(1);
 	}
 
-	findObjectShape(baseImage, minContourPoint);
+	findObjectShape(baseImage, minContourPoint, aspectedContours);
 	showContours(baseShape, baseImage.size());
 
 	/*for (int i = 0; i < baseShape.size(); i++)
@@ -100,17 +100,21 @@ cv::Mat MultiContoursObject::findObjectsInImg(cv::Mat img, double hammingThresho
 
 	
 	// PERFORM OPENING (Erosion --> Dilation)
-	/*
+	
 	int erosion_size = 4;
 	int dilation_size = 4;
 
 	Mat element = getStructuringElement(0, Size(2 * erosion_size, 2 * erosion_size), Point(erosion_size, erosion_size));
 	erode(gray, gray, element);
 	dilate(gray, gray, element);
-	*/
+	
 	// need a loop that decreese the threshold min value if the image is too black
 	// for now 60 is ok
 	threshold(gray, thresh, 100, 255, THRESH_BINARY);
+
+#ifdef DEBUG_MODE
+	imshow("Threshold", thresh);
+#endif
 
 	//imshow("Thresh", thresh);
 
@@ -131,10 +135,13 @@ cv::Mat MultiContoursObject::findObjectsInImg(cv::Mat img, double hammingThresho
 		cerr << e.what();
 	}
 
+
 #ifdef DEBUG_MODE
 	Mat image(img.size(), CV_8UC1);
 	image = Scalar(0);
 	drawContours(image, contours, -1, cv::Scalar(255), 1, CV_AA);
+
+	imshow("Contours", image);
 #endif
 
 	
@@ -175,11 +182,17 @@ cv::Mat MultiContoursObject::findObjectsInImg(cv::Mat img, double hammingThresho
 		}
 	}
 
-	
+
 	// APPROX LOOP
 	
 	for (map<int, vector<vector<Point>>>::iterator it = hierachedContours.begin(); it != hierachedContours.end(); it++)
 	{
+
+#ifdef DEBUG_MODE
+		image = Scalar(0);
+		drawContours(image, it->second, -1, cv::Scalar(255), 1, CV_AA);
+#endif
+
 		for (int k = 0; k < it->second.size(); k++)
 		{
 			if (it->second[k].size() < 4)
@@ -193,12 +206,12 @@ cv::Mat MultiContoursObject::findObjectsInImg(cv::Mat img, double hammingThresho
 			double epsilon = it->second[k].size() * 0.03;
 			approxPolyDP(it->second[k], approx, epsilon, true);
 
-			Mat contourImage(img.size(), CV_8UC1);
-			contourImage = Scalar(0);
+#ifdef DEBUG_MODE			
+			image = Scalar(0);
 			vector<vector<Point>> temp;
 			temp.push_back(approx);
-			drawContours(contourImage, temp, -1, cv::Scalar(255), 1, CV_AA);
-
+			drawContours(image, temp, -1, cv::Scalar(255), 1, CV_AA);
+#endif
 			if (approx.size() < 4)
 			{
 				if (k == 0) // padre
@@ -231,21 +244,6 @@ cv::Mat MultiContoursObject::findObjectsInImg(cv::Mat img, double hammingThresho
 
 	vector<vector<vector<Point>>> objects = findObjectsInContours(lookupVector, hammingThreshold, correlationThreshold);
 		
-#ifdef DEBUG_MODE
-	for (int i = 0; i < lookupVector.size(); i++)
-	{
-		Mat image(img.size(), CV_8UC1);
-		image = Scalar(0);
-		for (int j = 0; j < lookupVector[i].size(); j++)
-		{
-			vector<vector<Point>> temp;
-			temp.push_back(lookupVector[i][j]);
-			drawContours(image, temp, -1, cv::Scalar(255), 1, CV_AA);
-			imshow("Cont", image);
-		}
-		
-	}
-#endif
 
 	// FIND OBJECT LOOP
 
@@ -276,7 +274,7 @@ cv::Mat MultiContoursObject::findObjectsInImg(cv::Mat img, double hammingThresho
 }
 
 
-void MultiContoursObject::findObjectShape(cv::Mat baseImage, int minContourPoint)
+void MultiContoursObject::findObjectShape(cv::Mat baseImage, int minContourPoint, int aspectedContours)
 {
 	Mat thresh(baseImage.size(), CV_8UC1);
 	cvtColor(baseImage, thresh, CV_BGR2GRAY);
@@ -440,7 +438,7 @@ void MultiContoursObject::findObjectShape(cv::Mat baseImage, int minContourPoint
 			temp.push_back(approx);
 			drawContours(contourImage, temp, -1, cv::Scalar(255), 1, CV_AA);
 
-			if (approx.size() < 4)
+			if (approx.size() < minContourPoint)
 			{
 				if (k == 0) // padre
 					break;
@@ -470,9 +468,16 @@ void MultiContoursObject::findObjectShape(cv::Mat baseImage, int minContourPoint
 		exit(2);
 	}
 	
-
-	baseShape = approxHContours[0];
 	
+
+	for (map<int, vector<vector<Point>>>::iterator it = approxHContours.begin(); it != approxHContours.end(); it++)
+	{
+		if (it->second.size() == aspectedContours)
+		{
+			baseShape = it->second;
+			break;
+		}
+	}	
 }
 
 
