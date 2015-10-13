@@ -46,6 +46,4 @@ private:
 
 	std::vector<std::vector<cv::Point>> baseShape;
 
-	std::vector<cv::Point> baseTotal;
-
 };
