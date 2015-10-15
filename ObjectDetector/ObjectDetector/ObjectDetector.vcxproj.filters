@@ -27,10 +27,10 @@
     <ClCompile Include="ObjectDetectorFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Objectdetector.cpp">
+    <ClCompile Include="Utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Utility.cpp">
+    <ClCompile Include="ObjectDetector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,10 +44,10 @@
     <ClInclude Include="ObjectDetector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectdetectorFactory.h">
+    <ClInclude Include="Utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Utility.h">
+    <ClInclude Include="ObjectDetectorFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

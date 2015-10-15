@@ -14,7 +14,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MonoContourObjectDetector.cpp" />
     <ClCompile Include="MultiContourObjectDetector.cpp" />
-    <ClCompile Include="Objectdetector.cpp" />
+    <ClCompile Include="ObjectDetector.cpp" />
     <ClCompile Include="ObjectDetectorFactory.cpp" />
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
@@ -22,7 +22,7 @@
     <ClInclude Include="MonoContourObjectDetector.h" />
     <ClInclude Include="MultiContourObjectDetector.h" />
     <ClInclude Include="ObjectDetector.h" />
-    <ClInclude Include="ObjectdetectorFactory.h" />
+    <ClInclude Include="ObjectDetectorFactory.h" />
     <ClInclude Include="Utility.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
