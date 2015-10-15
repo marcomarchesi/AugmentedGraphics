@@ -12,7 +12,7 @@ ObjectDetector(minContourPoints, aspectedContours)
 
 bool MultiContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 {
-	vector<vector<vector<Point>>> approxContours = findApproxContours(baseImage, false, 150);
+	vector<vector<vector<Point>>> approxContours = findApproxContours(baseImage, false); //prima 150
 
 	if (approxContours.size() == 0)
 	{
@@ -33,14 +33,15 @@ bool MultiContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 
 std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::findApproxContours(
 	cv::Mat image,
-	bool performOpening,
-	int minThresholdValue)
+	bool performOpening)
 {
 	Size imgSize = image.size();
 	Mat gray(image.size(), CV_8UC1);
 	Mat thresh(image.size(), CV_8UC1);
 
 	cvtColor(image, gray, CV_BGR2GRAY);
+
+	int minThreshold = mean(gray)[0];	
 
 	if (performOpening)
 	{
@@ -52,9 +53,17 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 		Mat element = getStructuringElement(0, Size(2 * erosion_size, 2 * erosion_size), Point(erosion_size, erosion_size));
 		erode(gray, gray, element);
 		dilate(gray, gray, element);
+
+		minThreshold = mean(gray)[0];
+
+		if (minThreshold < 90)
+			minThreshold = 60;
+		else if (minThreshold >= 90 && minThreshold < 125)
+			minThreshold = 100;
 	}	
 
-	threshold(gray, thresh, minThresholdValue, 255, THRESH_BINARY);
+	
+	threshold(gray, thresh, minThreshold, 255, THRESH_BINARY);
 
 #ifdef DEBUG_MODE
 	imshow("Threshold", thresh);
@@ -190,7 +199,8 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::processContours(
 	std::vector<std::vector<std::vector<cv::Point>>> approxContours,
 	double hammingThreshold,
-	double correlationThreshold)
+	double correlationThreshold,
+	int* numberOfObject)
 {
 	Utility utility;
 
@@ -235,42 +245,8 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::pro
 			objects.push_back(approxContours[i]);
 	}
 
+	*numberOfObject = objects.size();
+
 	return objects;
 }
 
-cv::Mat MultiContourObjectDetector::generateDetectionMask(
-	std::vector<std::vector<std::vector<cv::Point>>> detectedObjects,
-	cv::Size imageSize,
-	int type)
-{
-	/*
-	Scalar base, pen;
-
-	if (type == CV_8UC1)
-	{
-		base = Scalar(0);
-		pen = Scalar(255);
-	}
-	else
-	{
-		base = Scalar(0, 0, 0);
-		pen = Scalar(255, 255, 255);
-	}
-	*/
-
-	Mat mask(imageSize, type);
-	mask = Scalar(0);
-
-	for (int i = 0; i < detectedObjects.size(); i++)
-	{
-		for (int j = 0; j < detectedObjects[i].size(); j++)
-		{
-			for (int k = 0; k < detectedObjects[i][j].size(); k++)
-			{
-				line(mask, detectedObjects[i][j][k], detectedObjects[i][j][(k + 1) % detectedObjects[i][j].size()], Scalar(255), 2, CV_AA);
-			}
-		}
-	}
-
-	return mask;
-}

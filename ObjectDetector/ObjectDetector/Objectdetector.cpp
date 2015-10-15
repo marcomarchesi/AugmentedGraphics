@@ -23,27 +23,61 @@ bool ObjectDetector::loadImage(cv::Mat& baseImage)
 }
 
 
-cv::Mat ObjectDetector::findObjectsInImage(cv::Mat& image, double hammingThreshold, double correlationThreshold)
+cv::Mat ObjectDetector::findObjectsInImage(cv::Mat& image,
+											double hammingThreshold,
+											double correlationThreshold,
+											std::vector<std::vector<std::vector<cv::Point>>>* detectedContours,
+											int* numberOfObject)
 {
-	if (image.size().height > 800 || image.size().width > 800)
+	vector<vector<vector<Point>>> approxContours = findApproxContours(image, true); //prima 60
+	
+	vector<vector<vector<Point>>> detectedObjects = processContours(approxContours, hammingThreshold, correlationThreshold, numberOfObject);
+
+	Mat mask = generateDetectionMask(detectedObjects, image.size(), image.type());
+
+	//Mat gray(image.size(), CV_8UC1);
+	//cvtColor(image, gray, CV_BGR2GRAY);
+
+	*detectedContours = detectedObjects;
+
+	image += mask;
+
+	return image;
+}
+
+cv::Mat ObjectDetector::generateDetectionMask(
+	std::vector<std::vector<std::vector<cv::Point>>> detectedObjects,
+	cv::Size imageSize,
+	int type)
+{
+
+	Scalar base, pen;
+
+	if (type == CV_8UC1)
 	{
-		Size s = image.size(), small;
-		small.height = s.height / 3;
-		small.width = s.width / 3;
-
-		resize(image, image, small);
+		base = Scalar(0);
+		pen = Scalar(255);
 	}
-	
-	vector<vector<vector<Point>>> approxContours = findApproxContours(image, true, 60);
-	
-	vector<vector<vector<Point>>> detectedObjects = processContours(approxContours, hammingThreshold, correlationThreshold);
+	else
+	{
+		base = Scalar(0, 0, 0);
+		pen = Scalar(255, 255, 255);
+	}
 
-	Mat mask = generateDetectionMask(detectedObjects, image.size(), CV_8UC1);
 
-	Mat gray(image.size(), CV_8UC1);
-	cvtColor(image, gray, CV_BGR2GRAY);
+	Mat mask(imageSize, type);
+	mask = base;
 
-	gray += mask;
+	for (int i = 0; i < detectedObjects.size(); i++)
+	{
+		for (int j = 0; j < detectedObjects[i].size(); j++)
+		{
+			for (int k = 0; k < detectedObjects[i][j].size(); k++)
+			{
+				line(mask, detectedObjects[i][j][k], detectedObjects[i][j][(k + 1) % detectedObjects[i][j].size()], pen, 2, CV_AA);
+			}
+		}
+	}
 
-	return gray;
+	return mask;
 }

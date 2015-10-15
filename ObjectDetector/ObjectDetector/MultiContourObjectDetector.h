@@ -12,19 +12,14 @@ private:
 
 	std::vector<std::vector<std::vector<cv::Point>>> findApproxContours(
 		cv::Mat image,
-		bool performOpening,
-		int minThresholdValue);
+		bool performOpening);
 
 	std::vector<std::vector<std::vector<cv::Point>>> processContours(
 		std::vector<std::vector<std::vector<cv::Point>>> approxContours,
 		double hammingThreshold,
-		double correlationThreshold);
+		double correlationThreshold,
+		int* numberOfObject);
 
-	cv::Mat generateDetectionMask(
-		std::vector<std::vector<std::vector<cv::Point>>> detectedObjects,
-		cv::Size imageSize,
-		int type);
-
-
+	
 	std::vector<std::vector<cv::Point>> _baseShape;
 };

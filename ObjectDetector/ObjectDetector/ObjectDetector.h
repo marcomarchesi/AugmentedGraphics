@@ -9,7 +9,11 @@ public:
 	
 	ObjectDetector(int minContourPoints, int aspectedContours);
 	
-	cv::Mat findObjectsInImage(cv::Mat& image, double hammingThreshold, double correlationThreshold);
+	cv::Mat findObjectsInImage(cv::Mat& image,
+								double hammingThreshold,
+								double correlationThreshold,
+								std::vector<std::vector<std::vector<cv::Point>>>* detectedContours,
+								int*numberOfObject);
 
 	bool loadImage(cv::Mat& baseImage);
 
@@ -19,18 +23,18 @@ private:
 
 	virtual std::vector<std::vector<std::vector<cv::Point>>> findApproxContours(
 						cv::Mat image,
-						bool performOpening,
-						int minThresholdValue) = 0;
+						bool performOpening) = 0;
 
 	virtual std::vector<std::vector<std::vector<cv::Point>>> processContours(
 						std::vector<std::vector<std::vector<cv::Point>>> approxContours,
 						double hammingThreshold,
-						double correlationThreshold) = 0;
+						double correlationThreshold,
+						int* numberOfObject) = 0;
 
-	virtual cv::Mat generateDetectionMask(
-						std::vector<std::vector<std::vector<cv::Point>>> detectedObjects,
-						cv::Size imageSize,
-						int type) = 0;
+	cv::Mat generateDetectionMask(
+				std::vector<std::vector<std::vector<cv::Point>>> detectedObjects,
+				cv::Size imageSize,
+				int type);
 
 protected:
 	cv::Size _baseSize;

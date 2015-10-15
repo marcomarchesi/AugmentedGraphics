@@ -11,7 +11,7 @@ ObjectDetector(minContourPoints, aspectedContours)
 
 bool MonoContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 {
-	vector<vector<vector<Point>>> compatibleContours = findApproxContours(baseImage, false, 127);
+	vector<vector<vector<Point>>> compatibleContours = findApproxContours(baseImage, false);
 
 	if (compatibleContours[0].size() == 0)
 	{
@@ -25,14 +25,15 @@ bool MonoContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 
 vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	cv::Mat image,
-	bool performOpening,
-	int minThresholdValue)
+	bool performOpening)
 {
 	Size imgSize = image.size();
 	Mat gray(image.size(), CV_8UC1);
 	Mat thresh(image.size(), CV_8UC1);
 
 	cvtColor(image, gray, CV_BGR2GRAY);
+
+	int minThreshold = mean(gray)[0];
 
 	if (performOpening)
 	{
@@ -44,9 +45,18 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 		Mat element = getStructuringElement(0, Size(2 * erosion_size, 2 * erosion_size), Point(erosion_size, erosion_size));
 		erode(gray, gray, element);
 		dilate(gray, gray, element);
+
+		minThreshold = mean(gray)[0];
+
+		if (minThreshold < 90)
+			minThreshold = 60;
+		else if (minThreshold >= 90 && minThreshold < 125)
+			minThreshold = 100;
 	}
 
-	threshold(gray, thresh, minThresholdValue, 255, THRESH_BINARY);
+	
+
+	threshold(gray, thresh, minThreshold, 255, THRESH_BINARY);
 
 	//imshow("Thresh", thresh);
 
@@ -86,7 +96,8 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::processContours(
 	std::vector<std::vector<std::vector<cv::Point>>> approxContours,
 	double hammingThreshold,
-	double correlationThreshold)
+	double correlationThreshold,
+	int* numberOfObject)
 {
 #ifdef DEBUG_MODE
 	//cout << "Contours founded: " << to_string(approxContours[0].size()) << endl;
@@ -142,6 +153,8 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 	cout << "Possible valid objects: " << to_string(objects.size()) << endl;
 #endif
 
+
+	*numberOfObject = (objects.size());
 	
 	vector<vector<vector<Point>>> retVector;
 	retVector.push_back(objects);
@@ -150,35 +163,3 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 }
 
 
-cv::Mat MonoContourObjectDetector::generateDetectionMask(
-	std::vector<std::vector<std::vector<cv::Point>>> detectedObjects,
-	cv::Size imageSize,
-	int type)
-{
-	Mat mask(imageSize, type);
-
-	Scalar base, pen;
-
-	if (type == CV_8UC1)
-	{
-		base = Scalar(0);
-		pen = Scalar(255);
-	}
-	else
-	{
-		base = Scalar(0, 0, 0);
-		pen = Scalar(255, 255, 255);
-	}
-
-	mask = base;
-
-	for (int i = 0; i < detectedObjects[0].size(); i++)
-	{
-		for (int j = 0; j < detectedObjects[0][i].size(); j++)
-		{
-			line(mask, detectedObjects[0][i][j], detectedObjects[0][i][(j + 1) % detectedObjects[0][i].size()], pen, 2, CV_AA);
-		}
-	}
-	
-	return mask;
-}
