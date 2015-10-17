@@ -1,6 +1,9 @@
 #include "opencv2/opencv.hpp"
 #include "ObjectDetector.h"
 #include "ObjectdetectorFactory.h"
+
+#include "opencv2/highgui/highgui.hpp"
+
 using namespace cv;
 using namespace std;
 
@@ -43,16 +46,23 @@ void paintCallback(int event, int x, int y, int flags, void* userdata)
 	ObjectDetector* detector = params->detector;
 	Scalar color = *params->color;
 
-	if (event == EVENT_MOUSEMOVE && flags == EVENT_FLAG_LBUTTON)
+	if (flags == EVENT_FLAG_LBUTTON)
 	{
-		//press left button and drag
-		circle(input, Point(x, y), 1, color, -1);
+		if (x >= 495 && x <= 600 && y >= 0 && y <= 32)
+		{
+			input = Scalar(255, 255, 255);
+			output = Scalar(0, 0, 0);
+			putText(input, "CLEAR", Point(495, 30), FONT_HERSHEY_COMPLEX, 1.0f, Scalar(0, 0, 0), 2);
+		}
+
+		if (event == EVENT_MOUSEMOVE)	//press left button and drag
+			circle(input, Point(x, y), 1, color, -1);
 	}
 	else if (event == EVENT_LBUTTONUP)
 	{
 		vector<vector<vector<Point>>> objects;
 		int numberOfObjects = 0;
-		Mat mask = detector->findObjectsInImage(input, 70, 90, &objects, &numberOfObjects);
+		Mat mask = detector->findObjectsInImage(input, 80, 90, &objects, &numberOfObjects);
 		output += mask;
 	}
 }
@@ -93,6 +103,7 @@ void START(int event, int x, int y, int flags, void* userdata)
 	moveWindow("palette", 0, 50);
 	// ----------------------------------------------------------------
 
+	putText(drawingArea, "CLEAR", Point(495, 30), FONT_HERSHEY_COMPLEX, 1.0f, Scalar(0, 0, 0), 2);
 
 	CallbackParams* params = new CallbackParams;
 	params->input = drawingArea;
