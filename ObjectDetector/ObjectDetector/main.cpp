@@ -28,7 +28,7 @@ int main(int, char)
 	int numberOfObjects = 0;
 
 	Mat result = detector->findObjectsInImage(image, 70.0, 70.0, &objects, &numberOfObjects);
-	imshow("FINAL RESULT", result);
+	imshow("FINAL RESULT", image+=result);
 	
 
 	/*

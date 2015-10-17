@@ -40,9 +40,9 @@ cv::Mat ObjectDetector::findObjectsInImage(cv::Mat& image,
 
 	*detectedContours = detectedObjects;
 
-	image += mask;
+	//image += mask;
 
-	return image;
+	return mask;
 }
 
 cv::Mat ObjectDetector::generateDetectionMask(
