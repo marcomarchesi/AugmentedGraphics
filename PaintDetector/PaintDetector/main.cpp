@@ -63,7 +63,7 @@ void paintCallback(int event, int x, int y, int flags, void* userdata)
 		vector<vector<vector<Point>>> objects;
 		int numberOfObjects = 0;
 		Mat mask = detector->findObjectsInImage(input, 80, 90, &objects, &numberOfObjects);
-		output += mask;
+		output = mask;
 	}
 }
 
@@ -77,11 +77,11 @@ void START(int event, int x, int y, int flags, void* userdata)
 	
 	Size size(600, 600);
 	Mat drawingArea(size, CV_8UC3),
-		outputImage(size, CV_8UC3);
+		outputImage(size, CV_8UC4);
 
 
 	drawingArea = Scalar(255, 255, 255);
-	outputImage = Scalar(0, 0, 0);
+	outputImage = Scalar(0, 0, 0,0);
 
 	Mat baseImage = imread("ninja.jpg");
 	if (baseImage.empty())

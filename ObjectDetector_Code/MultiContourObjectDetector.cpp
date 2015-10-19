@@ -39,7 +39,8 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 	Mat gray(image.size(), CV_8UC1);
 	Mat thresh(image.size(), CV_8UC1);
 
-	cvtColor(image, gray, CV_BGR2GRAY);
+	if (image.channels() >= 3)
+		cvtColor(image, gray, CV_BGR2GRAY);
 
 	int minThreshold = mean(gray)[0];	
 

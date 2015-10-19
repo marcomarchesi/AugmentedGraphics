@@ -27,8 +27,9 @@ int main(int, char)
 	vector<vector<vector<Point>>> objects;
 	int numberOfObjects = 0;
 
-	Mat result = detector->findObjectsInImage(image, 70.0, 70.0, &objects, &numberOfObjects);
-	imshow("FINAL RESULT", image+=result);
+	Mat mask = detector->findObjectsInImage(image, 70.0, 70.0, &objects, &numberOfObjects);
+
+	imshow("FINAL RESULT",mask);
 	
 
 	/*

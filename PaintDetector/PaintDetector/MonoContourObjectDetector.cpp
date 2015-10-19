@@ -31,7 +31,8 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	Mat gray(image.size(), CV_8UC1);
 	Mat thresh(image.size(), CV_8UC1);
 
-	cvtColor(image, gray, CV_BGR2GRAY);
+	if (image.channels() >= 3)
+		cvtColor(image, gray, CV_BGR2GRAY);
 
 	int minThreshold = mean(gray)[0];
 
@@ -78,15 +79,9 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 		if (contours[i].size() < 3)
 			continue;
 
-		double epsilon = contours[i].size() * 0.03;
+		double epsilon = contours[i].size() * 0.05;
 		approxPolyDP(contours[i], approx, epsilon, true);
-#ifdef DDEBUG_MODE		
-		contoursImage = cv::Scalar(0);
-		vector<vector<Point>> temp;
-		temp.push_back(approx);
-		drawContours(contoursImage, temp, -1, cv::Scalar(255), 1, CV_AA);
-		imshow("ContoursImage", contoursImage);
-#endif
+
 		if (approx.size() == _minContourPoints)
 			approxContours.push_back(approx);
 	}
