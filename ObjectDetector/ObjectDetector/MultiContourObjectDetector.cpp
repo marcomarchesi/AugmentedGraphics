@@ -12,7 +12,7 @@ ObjectDetector(minContourPoints, aspectedContours)
 
 bool MultiContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 {
-	vector<vector<vector<Point>>> approxContours = findApproxContours(baseImage, false); //prima 150
+	vector<vector<vector<Point>>> approxContours = findApproxContours(baseImage, false);
 
 	if (approxContours.size() == 0)
 	{
@@ -144,10 +144,12 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 		tempI = Scalar(0);
 		drawContours(tempI, it->second, -1, cv::Scalar(255), 1, CV_AA);
 #endif
+		if (it == hierachedContours.begin() && contours.size() > _aspectedContours)
+			continue;
 
 		for (int k = 0; k < it->second.size(); k++)
 		{
-			if (it->second[k].size() < 4)
+			if (it->second[k].size() < _minContourPoints)
 			{
 				if (k == 0) // padre
 					break;
@@ -164,7 +166,7 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 			temp.push_back(approx);
 			drawContours(tempI, temp, -1, cv::Scalar(255), 1, CV_AA);
 #endif
-			if (approx.size() < 4)
+			if (approx.size() < _minContourPoints)
 			{
 				if (k == 0) // padre
 					break;

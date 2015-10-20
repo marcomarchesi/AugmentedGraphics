@@ -76,11 +76,19 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 	for (int i = 0; i < contours.size(); i++)
 	{
+
 		if (contours[i].size() < 3)
 			continue;
 
-		double epsilon = contours[i].size() * 0.05;
+		double epsilon = contours[i].size() * 0.02;
 		approxPolyDP(contours[i], approx, epsilon, true);
+
+#ifdef DEBUG_MODE			
+		contoursImage = Scalar(0);
+		vector<vector<Point>> temp;
+		temp.push_back(approx);
+		drawContours(contoursImage, temp, -1, cv::Scalar(255), 1, CV_AA);
+#endif
 
 		if (approx.size() == _minContourPoints)
 			approxContours.push_back(approx);

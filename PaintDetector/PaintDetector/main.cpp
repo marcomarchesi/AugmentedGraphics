@@ -4,6 +4,10 @@
 
 #include "opencv2/highgui/highgui.hpp"
 
+#include <fstream>
+#include <string>
+#include <time.h>
+
 using namespace cv;
 using namespace std;
 
@@ -19,6 +23,13 @@ typedef struct ColorPicker
 {
 	Mat palette;
 	Scalar* color;
+};
+
+typedef struct BaseImage
+{
+	string filename;
+	int minContourPoints;
+	int contoursNumber;
 };
 
 void changeColorCallback(int event, int x, int y, int flags, void* userdata)
@@ -62,7 +73,7 @@ void paintCallback(int event, int x, int y, int flags, void* userdata)
 	{
 		vector<vector<vector<Point>>> objects;
 		int numberOfObjects = 0;
-		Mat mask = detector->findObjectsInImage(input, 65, 90, &objects, &numberOfObjects);
+		Mat mask = detector->findObjectsInImage(input, 1, 20, &objects, &numberOfObjects);
 
 #ifdef DEBUG_MODE
 		Mat out(output.size(), output.type());
@@ -93,14 +104,7 @@ void START(int event, int x, int y, int flags, void* userdata)
 
 	drawingArea = Scalar(255, 255, 255);
 	outputImage = Scalar(0, 0, 0,0);
-
-	Mat baseImage = imread("ninja.jpg");
-	if (baseImage.empty())
-		exit(1);
-
-	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(8, 2);
-	if (!detector->loadImage(baseImage))
-		exit(1);
+	putText(drawingArea, "CLEAR", Point(495, 30), FONT_HERSHEY_COMPLEX, 1.0f, Scalar(0, 0, 0), 2);
 	
 	// SHOW COLOR PALETTE ----------------------------------------------
 
@@ -114,7 +118,55 @@ void START(int event, int x, int y, int flags, void* userdata)
 	moveWindow("palette", 0, 50);
 	// ----------------------------------------------------------------
 
-	putText(drawingArea, "CLEAR", Point(495, 30), FONT_HERSHEY_COMPLEX, 1.0f, Scalar(0, 0, 0), 2);
+	// READ BASE IMAGES -----------------------------------------------
+
+	ifstream in("shapes.txt");
+
+	vector<BaseImage> images;
+	int i = 0;
+	while (in)
+	{
+		char temp[256];
+		in.getline(temp, 256);
+
+		char* tok;
+		BaseImage b;
+		i = 0;
+		tok = strtok(temp, " ");
+		while (tok != NULL)
+		{
+			if (i == 0)
+				b.filename = tok;
+			else if (i == 1)
+				b.minContourPoints = atoi(tok);
+			else
+				b.contoursNumber = atoi(tok);
+
+			tok = strtok(NULL, " ");
+			i++;
+		}
+		images.push_back(b);
+	}
+	in.close();
+	
+	
+
+	// ----------------------------------------------------------------
+
+	srand(time(NULL));
+	int id = rand() % (images.size()-1);	
+
+	Mat bi = imread(images[id].filename);
+	if (bi.empty())
+		exit(1);
+
+	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(images[id].minContourPoints, images[id].contoursNumber);
+	if (!detector->loadImage(bi))
+		exit(1);
+
+	namedWindow("Base", 1);
+	moveWindow("Base", 1000, 800);
+	imshow("Base", bi);
 
 	CallbackParams* params = new CallbackParams;
 	params->input = drawingArea;
@@ -129,6 +181,7 @@ void START(int event, int x, int y, int flags, void* userdata)
 	moveWindow("Detected Result", 705, 50);
 
 	setMouseCallback("Paint it!!", paintCallback, params);
+
 
 	for (;;)
 	{
@@ -155,7 +208,7 @@ int main(int, char)
 	namedWindow("welcome", 1);
 
 	setMouseCallback("welcome", START);
-
+	moveWindow("welcome", 500, 100);
 	imshow("welcome", homeImage);
 	waitKey(0);
 	return 0;

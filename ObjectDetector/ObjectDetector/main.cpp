@@ -5,9 +5,9 @@ using namespace std;
 
 int main(int, char)
 {
-	Mat baseImage = imread("ninja.jpg");
+	Mat baseImage = imread("Z.png");
 
-	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(8, 2);
+	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(5, 1);
 	detector->loadImage(baseImage);
 
 
