@@ -62,8 +62,19 @@ void paintCallback(int event, int x, int y, int flags, void* userdata)
 	{
 		vector<vector<vector<Point>>> objects;
 		int numberOfObjects = 0;
-		Mat mask = detector->findObjectsInImage(input, 80, 90, &objects, &numberOfObjects);
-		output = mask;
+		Mat mask = detector->findObjectsInImage(input, 65, 90, &objects, &numberOfObjects);
+
+#ifdef DEBUG_MODE
+		Mat out(output.size(), output.type());
+		out = Scalar(0, 0, 0);
+		for (int i = 0; i < objects.size(); i++)
+		{
+			drawContours(out, objects[i], -1, Scalar(255, 255, 255), -1, CV_AA);
+		}
+		imshow("detected", out);
+#endif
+
+		output += mask;
 	}
 }
 

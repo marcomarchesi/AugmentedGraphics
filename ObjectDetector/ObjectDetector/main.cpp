@@ -7,12 +7,12 @@ int main(int, char)
 {
 	Mat baseImage = imread("ninja.jpg");
 
-	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(8, 1);
+	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(8, 2);
 	detector->loadImage(baseImage);
 
 
 	
-	Mat image = imread("stelle.jpg");
+	Mat image = imread("drawing.jpg");
 	
 	if (image.size().height > 800 || image.size().width > 800)
 	{
