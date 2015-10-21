@@ -7,12 +7,12 @@ int main(int, char)
 {
 	Mat baseImage = imread("Z.png");
 
-	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(5, 1);
-	detector->loadImage(baseImage);
-
+	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(8, 1);
+	if(!detector->loadImage(baseImage))
+		exit(1);
 
 	
-	Mat image = imread("drawing.jpg");
+	Mat image = imread("alfabeto.png");
 	
 	if (image.size().height > 800 || image.size().width > 800)
 	{
@@ -27,7 +27,7 @@ int main(int, char)
 	vector<vector<vector<Point>>> objects;
 	int numberOfObjects = 0;
 
-	Mat mask = detector->findObjectsInImage(image, 70.0, 70.0, &objects, &numberOfObjects);
+	Mat mask = detector->findObjectsInImage(image, 1, 90.0, &objects, &numberOfObjects);
 
 	imshow("FINAL RESULT",mask);
 	

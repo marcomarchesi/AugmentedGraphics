@@ -1,7 +1,7 @@
 shape\ninja.jpg 8 2
 shape\A.png 3 2
-shape\B.png 6 3
-shape\C.png 11 1
+shape\B.png 5 3
+shape\C.png 12 1
 shape\D.png 6 2
 shape\E.png 11 1
 shape\F.png 10 1
@@ -12,7 +12,7 @@ shape\L.png 6 1
 shape\M.png 12 1
 shape\N.png 10 1
 shape\O.png 8 2
-shape\P.png 6 2
+shape\P.png 5 2
 shape\Q.png 8 2
 shape\R.png 9 2
 shape\S.png 13 1

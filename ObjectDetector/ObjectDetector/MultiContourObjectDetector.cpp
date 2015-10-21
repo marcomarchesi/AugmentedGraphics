@@ -214,6 +214,10 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::pro
 		if (approxContours[i].size() != _baseShape.size())
 			continue;
 
+		Mat tempI(Size(500,500), CV_8UC1);
+		tempI = Scalar(0);
+		drawContours(tempI, approxContours[i], -1, cv::Scalar(255), 1, CV_AA);
+
 		double totCorrelation = 0,
 			totHamming = 0;
 
