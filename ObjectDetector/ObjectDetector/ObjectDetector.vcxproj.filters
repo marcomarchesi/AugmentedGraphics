@@ -50,5 +50,8 @@
     <ClInclude Include="ObjectDetectorFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="commonInclude.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

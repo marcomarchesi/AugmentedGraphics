@@ -19,6 +19,7 @@
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="commonInclude.h" />
     <ClInclude Include="MonoContourObjectDetector.h" />
     <ClInclude Include="MultiContourObjectDetector.h" />
     <ClInclude Include="ObjectDetector.h" />

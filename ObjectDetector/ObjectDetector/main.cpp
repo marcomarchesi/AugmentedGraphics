@@ -5,14 +5,14 @@ using namespace std;
 
 int main(int, char)
 {
-	Mat baseImage = imread("Z.png");
+	Mat baseImage = imread("ninja.jpg");
 
-	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(8, 1);
+	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(12, 2);
 	if(!detector->loadImage(baseImage))
 		exit(1);
 
 	
-	Mat image = imread("alfabeto.png");
+	Mat image = imread("stelle.jpg");
 	
 	if (image.size().height > 800 || image.size().width > 800)
 	{
@@ -27,7 +27,7 @@ int main(int, char)
 	vector<vector<vector<Point>>> objects;
 	int numberOfObjects = 0;
 
-	Mat mask = detector->findObjectsInImage(image, 1, 90.0, &objects, &numberOfObjects);
+	Mat mask = detector->findObjectsInImage(image, 88, 90, &objects, &numberOfObjects);
 
 	imshow("FINAL RESULT",mask);
 	

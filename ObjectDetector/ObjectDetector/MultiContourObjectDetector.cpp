@@ -157,8 +157,10 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 					continue;
 			}
 
-			double epsilon = it->second[k].size() * 0.03;
-			approxPolyDP(it->second[k], approx, epsilon, true);
+			convexHull(it->second[k], approx, false);
+
+			//double epsilon = it->second[k].size() * 0.025;
+			//approxPolyDP(it->second[k], approx, epsilon, true);
 
 #ifdef DEBUG_MODE			
 			tempI = Scalar(0);
