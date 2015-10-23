@@ -40,5 +40,9 @@ protected:
 	cv::Size _baseSize;
 	const int _minContourPoints;
 	const int _aspectedContours;
+	const double _deleteFocus;
+	const double _attenuationFocus;
+	cv::Rect _deleteRect;
+	cv::Rect _attenuationRect;
 };
 #endif

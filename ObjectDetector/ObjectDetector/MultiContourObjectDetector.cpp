@@ -35,6 +35,28 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 	cv::Mat image,
 	bool performOpening)
 {
+
+	// CREATE ACTIVE ZONE 80% AND 50% ---------------------
+
+	Point centre(image.size().width / 2, image.size().height / 2);
+
+	int deleteHeight = image.size().height * _deleteFocus;
+	int deleteWidth = image.size().width * _deleteFocus;
+	int deleteX = centre.x - deleteWidth / 2;
+	int deleteY = centre.y - deleteHeight / 2;
+
+	int attenuationHeight = image.size().height * _attenuationFocus;
+	int attenuationWidth = image.size().width * _attenuationFocus;
+	int attenuationX = centre.x - attenuationWidth / 2;
+	int attenuationY = centre.y - attenuationHeight / 2;
+
+	Rect erase(deleteX, deleteY, deleteWidth, deleteHeight);
+	_deleteRect = erase;
+
+	Rect ease(attenuationX, attenuationY, attenuationWidth, attenuationHeight);
+	_attenuationRect = ease;
+	// ----------------------------------------
+
 	Size imgSize = image.size();
 	Mat gray(image.size(), CV_8UC1);
 	Mat thresh(image.size(), CV_8UC1);
@@ -168,6 +190,25 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 			temp.push_back(approx);
 			drawContours(tempI, temp, -1, cv::Scalar(255), 1, CV_AA);
 #endif
+
+			// REMOVE TOO EXTERNAL SHAPES -------------
+
+			Moments m = moments(approx, true);
+			int cx = int(m.m10 / m.m00);
+			int cy = int(m.m01 / m.m00);
+
+			Point c(cx, cy);
+
+			if (!(c.x >= _deleteRect.x &&
+				c.y >= _deleteRect.y &&
+				c.x <= (_deleteRect.x + _deleteRect.width) &&
+				c.y <= (_deleteRect.y + _deleteRect.height)))
+			{
+				if (k == 0) // se è il padre elimino tutta la figura
+					break;				
+			}
+			// --------------------------------------------------
+
 			if (approx.size() < _minContourPoints)
 			{
 				if (k == 0) // padre
@@ -210,27 +251,58 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::pro
 	Utility utility;
 
 	vector<vector<vector<Point>>> objects;
+	double attenuation = 0;
 
 	for (int i = 0; i < approxContours.size(); i++)
 	{
 		if (approxContours[i].size() != _baseShape.size())
 			continue;
+		attenuation = 0;
 
-		Mat tempI(Size(500,500), CV_8UC1);
+#ifdef DEBUG_MODE
+		Mat tempI(Size(1000,1000), CV_8UC1);
 		tempI = Scalar(0);
 		drawContours(tempI, approxContours[i], -1, cv::Scalar(255), 1, CV_AA);
+#endif
 
 		double totCorrelation = 0,
 			totHamming = 0;
 
+		Moments m = moments(approxContours[i][0], true);
+		int cx = int(m.m10 / m.m00);
+		int cy = int(m.m01 / m.m00);
+
+		Point c(cx, cy);
+
+		if (!(c.x >= _attenuationRect.x &&
+			c.y >= _attenuationRect.y &&
+			c.x <= (_attenuationRect.x + _attenuationRect.width) &&
+			c.y <= (_attenuationRect.y + _attenuationRect.height)))
+			attenuation = 15;		
+
 		// C and H with external contour
-		totCorrelation += utility.correlationWithBase(approxContours[i][0], _baseShape[0]);
-		totHamming += utility.calculateContourPercentageCompatibility(approxContours[i][0], _baseShape[0]);
+		totCorrelation += (utility.correlationWithBase(approxContours[i][0], _baseShape[0]) - attenuation);
+		totHamming += (utility.calculateContourPercentageCompatibility(approxContours[i][0], _baseShape[0]) - attenuation);
 
 		// looking for the contour with the better cnetroids and shape match
 
 		for (int j = 1; j < approxContours[i].size(); j++)
 		{
+			attenuation = 0;
+
+			Moments m = moments(approxContours[i][j], true);
+			int cx = int(m.m10 / m.m00);
+			int cy = int(m.m01 / m.m00);
+
+			Point c(cx, cy);
+
+			if (!(c.x >= _attenuationRect.x &&
+				c.y >= _attenuationRect.y &&
+				c.x <= (_attenuationRect.x + _attenuationRect.width) &&
+				c.y <= (_attenuationRect.y + _attenuationRect.height)))
+				attenuation = 15;
+
+
 			double maxCorrelation = numeric_limits<double>::min(),
 				maxHamming = numeric_limits<double>::min();
 
@@ -240,8 +312,8 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::pro
 				maxHamming = max(maxHamming, utility.calculateContourPercentageCompatibility(approxContours[i][j], _baseShape[k]));
 			}
 
-			totCorrelation += maxCorrelation;
-			totHamming += maxHamming;
+			totCorrelation += (maxCorrelation - attenuation);
+			totHamming += (maxHamming - attenuation);
 		}
 
 		totCorrelation /= approxContours[i].size();

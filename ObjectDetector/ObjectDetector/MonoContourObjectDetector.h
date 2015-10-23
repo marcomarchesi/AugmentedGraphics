@@ -23,4 +23,5 @@ private:
 	
 
 	std::vector<cv::Point> _baseShape;
+	
 };

@@ -7,7 +7,9 @@ using namespace cv;
 
 ObjectDetector::ObjectDetector(int minContourPoints, int aspectedContours):
 	_minContourPoints(minContourPoints),
-	_aspectedContours(aspectedContours)
+	_aspectedContours(aspectedContours),
+	_deleteFocus(0.80),
+	_attenuationFocus(0.50)
 {}
 
 
