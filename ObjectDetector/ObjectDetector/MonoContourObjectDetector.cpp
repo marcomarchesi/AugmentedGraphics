@@ -11,7 +11,7 @@ ObjectDetector(minContourPoints, aspectedContours)
 
 bool MonoContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 {
-	vector<vector<vector<Point>>> compatibleContours = findApproxContours(baseImage, false);
+	vector<vector<vector<Point>>> compatibleContours = findApproxContours(baseImage, true);
 
 	if (compatibleContours[0].size() == 0)
 	{
@@ -130,8 +130,8 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 		// --------------------------------------------------
 
 		int min, max;
-		min = _minContourPoints - _minContourPoints / 1.5;
-		max = _minContourPoints + _minContourPoints / 1.5;
+		min = _minContourPoints - _minContourPoints / 2.5;
+		max = _minContourPoints + _minContourPoints / 2.5;
 		
 
 		if (approx.size() >= min && approx.size() <= max)
