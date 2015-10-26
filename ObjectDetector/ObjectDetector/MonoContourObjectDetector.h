@@ -1,27 +1,30 @@
 #include "ObjectDetector.h"
 
-class MonoContourObjectDetector : public ObjectDetector{
+namespace od
+{
+	class MonoContourObjectDetector : public ObjectDetector{
 
-public:
+	public:
 
-	MonoContourObjectDetector(int minContourPoints, int aspectedContours);
+		MonoContourObjectDetector(int minContourPoints, int aspectedContours);
 
-private:
+	private:
 
-	bool findBaseShape(cv::Mat& baseImage);
+		bool findBaseShape(cv::Mat& baseImage);
 
-	std::vector<std::vector<std::vector<cv::Point>>> findApproxContours(
-															cv::Mat image,
-															bool performOpening);
+		std::vector<std::vector<std::vector<cv::Point>>> findApproxContours(
+			cv::Mat image,
+			bool performOpening);
 
-	std::vector<std::vector<std::vector<cv::Point>>> processContours(
-		std::vector<std::vector<std::vector<cv::Point>>> approxContours,
-		double hammingThreshold,
-		double correlationThreshold,
-		int* numberOfObject);
+		std::vector<std::vector<std::vector<cv::Point>>> processContours(
+			std::vector<std::vector<std::vector<cv::Point>>> approxContours,
+			double hammingThreshold,
+			double correlationThreshold,
+			int* numberOfObject);
 
-	
 
-	std::vector<cv::Point> _baseShape;
-	
-};
+
+		std::vector<cv::Point> _baseShape;
+
+	};
+}

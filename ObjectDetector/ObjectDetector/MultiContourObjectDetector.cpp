@@ -2,8 +2,10 @@
 #include "commonInclude.h"
 #include "MultiContourObjectDetector.h"
 
+
 using namespace std;
 using namespace cv;
+using namespace od;
 
 MultiContourObjectDetector::MultiContourObjectDetector(int minContourPoints, int aspectedContours) :
 ObjectDetector(minContourPoints, aspectedContours)
@@ -303,8 +305,8 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::pro
 				attenuation = 15;
 
 
-			double maxCorrelation = numeric_limits<double>::min(),
-				maxHamming = numeric_limits<double>::min();
+			double maxCorrelation = std::numeric_limits<double>::min(),
+				maxHamming = std::numeric_limits<double>::min();
 
 			for (int k = 1; k < _baseShape.size(); k++)
 			{

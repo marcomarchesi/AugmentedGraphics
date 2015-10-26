@@ -2,17 +2,18 @@
 
 using namespace cv;
 using namespace std;
+using namespace od;
 
 int main(int, char)
 {
-	Mat baseImage = imread("racoon.jpg");
+	Mat baseImage = imread("waterO.jpg");
 
 	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(58, 1);
 	if(!detector->loadImage(baseImage))
 		exit(1);
 
 	/*
-	Mat image = imread("tower1.jpg");
+	Mat image = imread("car.jpg");
 	
 	if (image.size().height > 800 || image.size().width > 800)
 	{
@@ -56,13 +57,13 @@ int main(int, char)
 
 			resize(image, image, small);
 		}
-		imshow("Source", image);
+		//imshow("Source", image);
 		vector<vector<vector<Point>>> objects;
 		int numberOfObjects = 0;
 
 		
 
-		Mat result = detector->findObjectsInImage(image, 60, 80, &objects, &numberOfObjects);
+		Mat result = detector->findObjectsInImage(image, 70, 90, ObjectDetector::OutputMaskMode::CONVEX_HULL, &objects, &numberOfObjects);
 		imshow("FINAL RESULT", result);
 
 		if (waitKey(30) > 0)

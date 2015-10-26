@@ -2,8 +2,10 @@
 #include "commonInclude.h"
 #include "MonoContourObjectDetector.h"
 
+
 using namespace std;
 using namespace cv;
+using namespace od;
 
 MonoContourObjectDetector::MonoContourObjectDetector(int minContourPoints, int aspectedContours) :
 ObjectDetector(minContourPoints, aspectedContours)
@@ -19,7 +21,19 @@ bool MonoContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 		return false;
 	}
 
-	_baseShape = compatibleContours[0][0];
+	int minID = 0;
+	int minDist = numeric_limits<int>::max();
+
+	for (int i = 0; i < compatibleContours[0].size(); i++)
+	{
+		if (abs(_minContourPoints - compatibleContours[0][i].size()) < minDist)
+		{
+			minID = i;
+			minDist = _minContourPoints - compatibleContours[0][i].size();
+		}
+	}
+
+	_baseShape = compatibleContours[0][minID];
 	return true;
 }
 
@@ -99,7 +113,7 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	for (int i = 0; i < contours.size(); i++)
 	{
 
-		if (contours[i].size() < 3)
+		if (contours[i].size() < _minContourPoints)
 			continue;
 
 		convexHull(contours[i], approx, false);
@@ -115,6 +129,9 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 #endif
 
 		// REMOVE TOO EXTERNAL SHAPES -------------
+
+		//if (i != 250 && i != 372 && i != 394 && i != 420 && i != 512)
+		//	continue;
 
 		Moments m = moments(approx, true);
 		int cx = int(m.m10 / m.m00);

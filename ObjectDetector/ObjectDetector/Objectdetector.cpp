@@ -2,8 +2,10 @@
 #include "Utility.h"
 #include "commonInclude.h"
 
+
 using namespace std;
 using namespace cv;
+using namespace od;
 
 ObjectDetector::ObjectDetector(int minContourPoints, int aspectedContours):
 	_minContourPoints(minContourPoints),
@@ -28,6 +30,7 @@ bool ObjectDetector::loadImage(cv::Mat& baseImage)
 cv::Mat ObjectDetector::findObjectsInImage(cv::Mat& image,
 											double hammingThreshold,
 											double correlationThreshold,
+											OutputMaskMode maskMode,
 											std::vector<std::vector<std::vector<cv::Point>>>* detectedContours,
 											int* numberOfObject)
 {
@@ -36,7 +39,7 @@ cv::Mat ObjectDetector::findObjectsInImage(cv::Mat& image,
 	vector<vector<vector<Point>>> detectedObjects = processContours(approxContours, hammingThreshold, correlationThreshold, numberOfObject);
 
 	cvtColor(image, image, CV_BGR2BGRA);
-	Mat mask = generateDetectionMask(detectedObjects, image.size(), image.type());	
+	Mat mask = generateDetectionMask(detectedObjects, image, maskMode);	
 
 	*detectedContours = detectedObjects;
 
@@ -48,13 +51,13 @@ cv::Mat ObjectDetector::findObjectsInImage(cv::Mat& image,
 
 cv::Mat ObjectDetector::generateDetectionMask(
 	std::vector<std::vector<std::vector<cv::Point>>> detectedObjects,
-	cv::Size imageSize,
-	int type)
+	cv::Mat& image,
+	OutputMaskMode maskMode)
 {
 
 	Scalar base, pen;
 
-	if (type == CV_8UC1)
+	if (image.type() == CV_8UC1)
 	{
 		base = Scalar(0);
 		pen = Scalar(255);
@@ -65,21 +68,88 @@ cv::Mat ObjectDetector::generateDetectionMask(
 		pen = Scalar(255, 255, 255);
 	}
 
-
-	Mat mask(imageSize, type);
+	
+	Mat mask(image.size(), image.type());
 	mask = base;
 
 	for (int i = 0; i < detectedObjects.size(); i++)
 	{
-		/*for (int j = 0; j < detectedObjects[i].size(); j++)
+		if (maskMode == OutputMaskMode::PRECISE)
 		{
-			for (int k = 0; k < detectedObjects[i][j].size(); k++)
-			{
-				line(mask, detectedObjects[i][j][k], detectedObjects[i][j][(k + 1) % detectedObjects[i][j].size()], pen, 2, CV_AA);
-			}
-		}*/
+			vector<vector<Point>> preciseContours;
 
-		drawContours(mask, detectedObjects[i], -1, pen, -1, CV_AA);
+			for (int j = 0; j < detectedObjects[i].size(); j++)
+			{
+				Rect objectRect = boundingRect(detectedObjects[i][j]);
+				objectRect.width += 2;
+				objectRect.height += 2;
+				objectRect.x -= 2;
+				objectRect.y -= 2;
+
+				Mat rect = image(objectRect);
+
+				Mat gray(rect.size(), rect.type());
+				cvtColor(rect, gray, CV_BGRA2GRAY);
+
+				int minThreshold = mean(gray)[0];
+
+				if (minThreshold < 90)
+					minThreshold = 60;
+				else if (minThreshold >= 90 && minThreshold < 125)
+					minThreshold = 100;
+
+				threshold(gray, gray, minThreshold, 255, THRESH_BINARY);
+
+				//imshow("Thresh", thresh);
+
+				vector<vector<Point>> contours;
+				findContours(gray, contours, CV_RETR_LIST, CHAIN_APPROX_NONE);
+
+#ifdef DEBUG_MODE
+				gray = cv::Scalar(0);
+				drawContours(gray, contours, -1, cv::Scalar(255), 1, CV_AA);
+#endif
+
+				vector<Point> maxC;
+				int size = 0;
+
+				for (int k = 0; k < contours.size(); k++)
+				{
+
+#ifdef DEBUG_MODE
+					gray = cv::Scalar(0);
+					vector<vector<Point>> temp;
+					temp.push_back(contours[k]);
+					drawContours(gray, temp, -1, cv::Scalar(255), 1, CV_AA);
+#endif
+					if (contours[k].size() > size)
+					{
+						vector<Point> approx;
+						approxPolyDP(contours[k], approx, contours[k].size() * 0.03, true);
+						if (approx.size() == 4)
+							continue;
+
+						size = contours[k].size();
+						maxC = contours[k];
+					}
+				}
+
+				for (int k = 0; k < maxC.size(); k++)
+				{
+					maxC[k].x += objectRect.x;
+					maxC[k].y += objectRect.y;
+				}
+
+				preciseContours.push_back(maxC);
+			}
+
+
+			drawContours(mask, preciseContours, -1, pen, -1, CV_AA);
+		}
+		else if (maskMode == OutputMaskMode::CONVEX_HULL)
+		{
+			drawContours(mask, detectedObjects[i], -1, pen, -1, CV_AA);
+		}	
 	}
 
 	return mask;

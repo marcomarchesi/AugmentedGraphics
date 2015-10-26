@@ -1,8 +1,10 @@
 #include "Utility.h"
 #include "commonInclude.h"
 
+
 using namespace cv;
 using namespace std;
+using namespace od;
 
 double Utility::calculateContourPercentageCompatibility(std::vector<cv::Point> contour, std::vector<cv::Point> base)
 {

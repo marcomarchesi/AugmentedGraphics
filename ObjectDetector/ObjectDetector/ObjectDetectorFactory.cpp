@@ -3,7 +3,9 @@
 #include "MonoContourObjectDetector.h"
 #include "commonInclude.h"
 
+
 using namespace std;
+using namespace od;
 
 ObjectDetector* ObjectDetectorFactory::getObjectDetector(int minContourPoints, int contoursNumber)
 {

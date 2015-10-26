@@ -1,48 +1,64 @@
 #ifndef OBJECT_DETECTOR
 #define OBJECT_DETECTOR
 
+#ifdef OBJECT_DETECTOR_DLL_EXPORT
+#define OBJECT_DETECTOR_DLL_API __declspec(dllexport) 
+#else
+#define OBJECT_DETECTOR_DLL_API __declspec(dllimport) 
+#endif
+
 #include "opencv2/opencv.hpp"
 
-class ObjectDetector
+namespace od
 {
-public:
-	
-	ObjectDetector(int minContourPoints, int aspectedContours);
-	
-	cv::Mat findObjectsInImage(cv::Mat& image,
-								double hammingThreshold,
-								double correlationThreshold,
-								std::vector<std::vector<std::vector<cv::Point>>>* detectedContours,
-								int*numberOfObject);
+	class ObjectDetector
+	{
+	public:
 
-	bool loadImage(cv::Mat& baseImage);
+		enum OutputMaskMode{
+			CONVEX_HULL,
+			PRECISE
+		};
 
-private:
+		ObjectDetector(int minContourPoints, int aspectedContours);
 
-	virtual bool findBaseShape(cv::Mat& baseImage) = 0;
+		cv::Mat findObjectsInImage(cv::Mat& image,
+			double hammingThreshold,
+			double correlationThreshold,
+			OutputMaskMode maskMode,
+			std::vector<std::vector<std::vector<cv::Point>>>* detectedContours,
+			int*numberOfObject);
 
-	virtual std::vector<std::vector<std::vector<cv::Point>>> findApproxContours(
-						cv::Mat image,
-						bool performOpening) = 0;
+		bool loadImage(cv::Mat& baseImage);
 
-	virtual std::vector<std::vector<std::vector<cv::Point>>> processContours(
-						std::vector<std::vector<std::vector<cv::Point>>> approxContours,
-						double hammingThreshold,
-						double correlationThreshold,
-						int* numberOfObject) = 0;
+	private:
 
-	cv::Mat generateDetectionMask(
-				std::vector<std::vector<std::vector<cv::Point>>> detectedObjects,
-				cv::Size imageSize,
-				int type);
+		virtual bool findBaseShape(cv::Mat& baseImage) = 0;
 
-protected:
-	cv::Size _baseSize;
-	const int _minContourPoints;
-	const int _aspectedContours;
-	const double _deleteFocus;
-	const double _attenuationFocus;
-	cv::Rect _deleteRect;
-	cv::Rect _attenuationRect;
-};
+		virtual std::vector<std::vector<std::vector<cv::Point>>> findApproxContours(
+			cv::Mat image,
+			bool performOpening) = 0;
+
+		virtual std::vector<std::vector<std::vector<cv::Point>>> processContours(
+			std::vector<std::vector<std::vector<cv::Point>>> approxContours,
+			double hammingThreshold,
+			double correlationThreshold,
+			int* numberOfObject) = 0;
+
+		cv::Mat generateDetectionMask(
+			std::vector<std::vector<std::vector<cv::Point>>> detectedObjects,
+			cv::Mat& image,
+			OutputMaskMode maskMode);
+
+	protected:
+		cv::Size _baseSize;
+		const int _minContourPoints;
+		const int _aspectedContours;
+		const double _deleteFocus;
+		const double _attenuationFocus;
+		cv::Rect _deleteRect;
+		cv::Rect _attenuationRect;
+	};
+}
+
 #endif

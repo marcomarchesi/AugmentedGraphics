@@ -1,7 +1,10 @@
 #include "ObjectDetector.h"
 
-class ObjectDetectorFactory
+namespace od
 {
-public:
-	static ObjectDetector* getObjectDetector(int minContourPoints, int contoursNumber);
-};
+	class ObjectDetectorFactory
+	{
+	public:
+		static ObjectDetector* getObjectDetector(int minContourPoints, int contoursNumber);
+	};
+}
