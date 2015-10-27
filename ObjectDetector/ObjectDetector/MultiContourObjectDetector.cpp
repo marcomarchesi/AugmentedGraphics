@@ -210,7 +210,7 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 					break;				
 			}
 
-			Rect bounding = boundingRect(contours[i]);
+			Rect bounding = boundingRect(it->second[k]);
 
 #ifdef DEBUG_MODE
 			rectangle(tempI, _deleteRect, Scalar(255));

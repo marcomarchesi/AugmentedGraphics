@@ -83,13 +83,13 @@ cv::Mat ObjectDetector::generateDetectionMask(
 				objectRect.width += 20;
 				objectRect.height += 20;
 				
-				if (objectRect.x >15)
-					objectRect.x -= 15;				
+				if (objectRect.x >5)
+					objectRect.x -= 5;				
 				else
 					objectRect.x = 0;
 
-				if (objectRect.y >15)
-					objectRect.y -= 15;
+				if (objectRect.y >5)
+					objectRect.y -= 5;
 				else
 					objectRect.y = 0;			
 				
@@ -99,6 +99,12 @@ cv::Mat ObjectDetector::generateDetectionMask(
 				Mat gray(rect.size(), rect.type());
 				cvtColor(rect, gray, CV_BGRA2GRAY);
 
+				Size s = rect.size();
+				s.width += 1;
+				s.height += 1;
+				Mat thresh(s, CV_8UC1);
+				thresh = Scalar(255);
+
 				int minThreshold = mean(gray)[0];
 				
 				if (minThreshold < 90)
@@ -106,12 +112,12 @@ cv::Mat ObjectDetector::generateDetectionMask(
 				else if (minThreshold >= 90 && minThreshold < 150)
 					minThreshold = 100;
 				
-				threshold(gray, gray, minThreshold, 255, THRESH_BINARY);
+				threshold(gray, thresh, minThreshold, 255, THRESH_BINARY);
 
 				//imshow("Thresh", thresh);
 
 				vector<vector<Point>> contours;
-				findContours(gray, contours, CV_RETR_LIST, CHAIN_APPROX_NONE);
+				findContours(thresh, contours, CV_RETR_LIST, CHAIN_APPROX_NONE);
 
 #ifdef DEBUG_MODE
 				gray = cv::Scalar(0);
