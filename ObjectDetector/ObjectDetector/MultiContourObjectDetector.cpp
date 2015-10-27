@@ -209,6 +209,24 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 				if (k == 0) // se è il padre elimino tutta la figura
 					break;				
 			}
+
+			Rect bounding = boundingRect(contours[i]);
+
+#ifdef DEBUG_MODE
+			rectangle(tempI, _deleteRect, Scalar(255));
+			rectangle(tempI, bounding, Scalar(255));
+#endif
+			bool isInternal = bounding.x > _deleteRect.x &&
+				bounding.y > _deleteRect.y &&
+				bounding.x + bounding.width < _deleteRect.x + _deleteRect.width &&
+				bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;
+
+
+			if (!isInternal)
+			{
+				if (k == 0)
+					break;
+			}
 			// --------------------------------------------------
 
 			if (approx.size() < _minContourPoints)

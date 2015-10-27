@@ -6,9 +6,9 @@ using namespace od;
 
 int main(int, char)
 {
-	Mat baseImage = imread("waterO.jpg");
+	Mat baseImage = imread("dragonTower1.jpg");
 
-	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(58, 1);
+	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(31, 1);
 	if(!detector->loadImage(baseImage))
 		exit(1);
 
@@ -63,7 +63,7 @@ int main(int, char)
 
 		
 
-		Mat result = detector->findObjectsInImage(image, 70, 90, ObjectDetector::OutputMaskMode::CONVEX_HULL, &objects, &numberOfObjects);
+		Mat result = detector->findObjectsInImage(image, 70, 90, ObjectDetector::OutputMaskMode::PRECISE, &objects, &numberOfObjects);
 		imshow("FINAL RESULT", result);
 
 		if (waitKey(30) > 0)

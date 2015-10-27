@@ -34,6 +34,9 @@ bool MonoContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 	}
 
 	_baseShape = compatibleContours[0][minID];
+
+
+
 	return true;
 }
 
@@ -130,20 +133,64 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 		// REMOVE TOO EXTERNAL SHAPES -------------
 
-		//if (i != 250 && i != 372 && i != 394 && i != 420 && i != 512)
-		//	continue;
+		//if (i == 76)
+		//	cout << "";
 
 		Moments m = moments(approx, true);
 		int cx = int(m.m10 / m.m00);
 		int cy = int(m.m01 / m.m00);
 
 		Point c(cx, cy);
+/*
+		int dx, dy, dw, dh;
+
+		dx = _deleteRect.x;
+		dy = _deleteRect.y;
+		dw = _deleteRect.width;
+		dh = _deleteRect.height;
+*/
 
 		if (!(c.x >= _deleteRect.x && 
 			c.y >= _deleteRect.y &&
 			c.x <= (_deleteRect.x + _deleteRect.width) &&
 			c.y <= (_deleteRect.y + _deleteRect.height)))
 			continue;
+
+		Rect bounding = boundingRect(contours[i]);
+
+#ifdef DEBUG_MODE
+		rectangle(contoursImage, _deleteRect, Scalar(255));
+		rectangle(contoursImage, bounding, Scalar(255));
+#endif
+		
+/*
+		int x, y, w, h;		
+
+		x = bounding.x;
+		y = bounding.y;
+		w = bounding.width;
+		h = bounding.height;
+
+		bool isBigger = (bounding.x < _deleteRect.x &&
+			bounding.y < _deleteRect.y &&
+			bounding.x + bounding.width > _deleteRect.x + _deleteRect.width &&
+			bounding.y + bounding.height > _deleteRect.y + _deleteRect.height);
+		
+		bool isTotalExternal = (bounding.x + bounding.width < _deleteRect.x ||
+			bounding.y + bounding.height < _deleteRect.y ||
+			bounding.y > _deleteRect.y + _deleteRect.height ||
+			bounding.x > _deleteRect.x + _deleteRect.width);
+*/
+
+		bool isInternal = bounding.x > _deleteRect.x &&
+			bounding.y > _deleteRect.y &&
+			bounding.x + bounding.width < _deleteRect.x + _deleteRect.width &&
+			bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;	
+
+
+		if (!isInternal)
+			continue;
+
 		// --------------------------------------------------
 
 		int min, max;
@@ -154,6 +201,12 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 		if (approx.size() >= min && approx.size() <= max)
 			approxContours.push_back(approx);
 	}
+
+#ifdef DEBUG_MODE			
+	contoursImage = Scalar(0);
+	drawContours(contoursImage, approxContours, -1, cv::Scalar(255), 1, CV_AA);
+	imshow("ApproxContours", contoursImage);
+#endif
 
 	vector<vector<vector<Point>>> retVector;
 	retVector.push_back(approxContours);

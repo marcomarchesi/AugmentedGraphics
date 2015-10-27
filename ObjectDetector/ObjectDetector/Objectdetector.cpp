@@ -10,8 +10,8 @@ using namespace od;
 ObjectDetector::ObjectDetector(int minContourPoints, int aspectedContours):
 	_minContourPoints(minContourPoints),
 	_aspectedContours(aspectedContours),
-	_deleteFocus(0.80),
-	_attenuationFocus(0.50)
+	_deleteFocus(0.85),
+	_attenuationFocus(0.40)
 {}
 
 
@@ -22,7 +22,6 @@ bool ObjectDetector::loadImage(cv::Mat& baseImage)
 		cerr << "The base image is empty";
 		return false;
 	}
-
 	return findBaseShape(baseImage);
 }
 
@@ -81,10 +80,19 @@ cv::Mat ObjectDetector::generateDetectionMask(
 			for (int j = 0; j < detectedObjects[i].size(); j++)
 			{
 				Rect objectRect = boundingRect(detectedObjects[i][j]);
-				objectRect.width += 2;
-				objectRect.height += 2;
-				objectRect.x -= 2;
-				objectRect.y -= 2;
+				objectRect.width += 20;
+				objectRect.height += 20;
+				
+				if (objectRect.x >15)
+					objectRect.x -= 15;				
+				else
+					objectRect.x = 0;
+
+				if (objectRect.y >15)
+					objectRect.y -= 15;
+				else
+					objectRect.y = 0;			
+				
 
 				Mat rect = image(objectRect);
 
@@ -92,12 +100,12 @@ cv::Mat ObjectDetector::generateDetectionMask(
 				cvtColor(rect, gray, CV_BGRA2GRAY);
 
 				int minThreshold = mean(gray)[0];
-
+				
 				if (minThreshold < 90)
 					minThreshold = 60;
-				else if (minThreshold >= 90 && minThreshold < 125)
+				else if (minThreshold >= 90 && minThreshold < 150)
 					minThreshold = 100;
-
+				
 				threshold(gray, gray, minThreshold, 255, THRESH_BINARY);
 
 				//imshow("Thresh", thresh);
