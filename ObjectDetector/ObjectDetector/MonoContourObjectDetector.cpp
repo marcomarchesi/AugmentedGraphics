@@ -133,7 +133,7 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 		// REMOVE TOO EXTERNAL SHAPES -------------
 
-		//if (i == 76)
+		//if (i == 23 || i==57)
 		//	cout << "";
 
 		Moments m = moments(approx, true);

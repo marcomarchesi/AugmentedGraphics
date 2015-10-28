@@ -6,9 +6,9 @@ using namespace od;
 
 int main(int, char)
 {
-	Mat baseImage = imread("dragonTower1.jpg");
+	Mat baseImage = imread("mecha2.jpg");
 
-	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(31, 1);
+	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(58, 1);
 	if(!detector->loadImage(baseImage))
 		exit(1);
 
@@ -33,12 +33,12 @@ int main(int, char)
 	imshow("FINAL RESULT",mask);
 	*/
 
-	
-	VideoCapture cap(0);
+	VideoCapture cap(1);
 	if (!cap.isOpened())
 	{
 		return 0;
 	}
+
 
 	Mat image;
 

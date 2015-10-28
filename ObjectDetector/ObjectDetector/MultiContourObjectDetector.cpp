@@ -14,7 +14,7 @@ ObjectDetector(minContourPoints, aspectedContours)
 
 bool MultiContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 {
-	vector<vector<vector<Point>>> approxContours = findApproxContours(baseImage, false);
+	vector<vector<vector<Point>>> approxContours = findApproxContours(baseImage, true);
 
 	if (approxContours.size() == 0)
 	{

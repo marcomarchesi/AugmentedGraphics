@@ -66,8 +66,7 @@ cv::Mat ObjectDetector::generateDetectionMask(
 		base = Scalar(0, 0, 0, 0);
 		pen = Scalar(255, 255, 255);
 	}
-
-	
+		
 	Mat mask(image.size(), image.type());
 	mask = base;
 
@@ -79,22 +78,33 @@ cv::Mat ObjectDetector::generateDetectionMask(
 
 			for (int j = 0; j < detectedObjects[i].size(); j++)
 			{
+				if (detectedObjects[i].size() == 2)
+					cout << "";
+
 				Rect objectRect = boundingRect(detectedObjects[i][j]);
-				objectRect.width += 20;
-				objectRect.height += 20;
+				objectRect.width += 15;
+				objectRect.height += 15;
 				
-				if (objectRect.x >5)
-					objectRect.x -= 5;				
+				if (objectRect.x >10)
+					objectRect.x -= 10;				
 				else
 					objectRect.x = 0;
 
-				if (objectRect.y >5)
-					objectRect.y -= 5;
+				if (objectRect.y >10)
+					objectRect.y -= 10;
 				else
 					objectRect.y = 0;			
 				
 
 				Mat rect = image(objectRect);
+
+				Point centre(rect.size().width / 2, rect.size().height / 2);
+				int delH = rect.size().height * 0.99;
+				int delW = rect.size().width * 0.99;
+				int delX = centre.x - delW / 2;
+				int delY = centre.y - delH / 2;
+				Rect del(delX, delY, delW, delH);
+
 
 				Mat gray(rect.size(), rect.type());
 				cvtColor(rect, gray, CV_BGRA2GRAY);
@@ -141,6 +151,22 @@ cv::Mat ObjectDetector::generateDetectionMask(
 						vector<Point> approx;
 						approxPolyDP(contours[k], approx, contours[k].size() * 0.03, true);
 						if (approx.size() == 4)
+							continue;
+
+						Rect bounding = boundingRect(contours[k]);
+
+#ifdef DEBUG_MODE
+						rectangle(gray, del, Scalar(255));
+						rectangle(gray, bounding, Scalar(255));
+#endif
+
+						bool isInternal = bounding.x > del.x &&
+							bounding.y > del.y &&
+							bounding.x + bounding.width < del.x + del.width &&
+							bounding.y + bounding.height < del.y + del.height;
+
+
+						if (!isInternal)
 							continue;
 
 						size = contours[k].size();
