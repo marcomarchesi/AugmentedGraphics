@@ -133,8 +133,8 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 		// REMOVE TOO EXTERNAL SHAPES -------------
 
-		//if (i == 23 || i==57)
-		//	cout << "";
+//		if (i == 20 || i==74 || i==102)
+//			cout << "";
 
 		Moments m = moments(approx, true);
 		int cx = int(m.m10 / m.m00);

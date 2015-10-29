@@ -1,0 +1,32 @@
+Scacchiera rilevata
+Hamming 90.191
+Correlazione 98.921
+Risoluzione 725 x 544
+
+----------------------------------------------
+
+Coso non lo riconosce
+
+----------------------------------------------
+
+dado trovato
+Hamming 79.372
+Correlation 98.907
+hamming sempre < 90
+
+----------------------------------------------
+
+car trovata molto facilmente
+anche con 
+Hamming 95.207
+Correlation 91.155
+
+-----------------------------------------------
+
+drago non trovato
+
+----------------------------------------------
+
+mecha trovato
+hamming 83.284
+Correlation 96.223

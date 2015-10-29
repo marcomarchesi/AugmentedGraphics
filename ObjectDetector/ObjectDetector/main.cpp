@@ -13,13 +13,13 @@ int main(int, char)
 		exit(1);
 
 	/*
-	Mat image = imread("car.jpg");
+	Mat image = imread("OAC/coso.jpg");
 	
 	if (image.size().height > 800 || image.size().width > 800)
 	{
 		Size s = image.size(), small;
-		small.height = s.height / 3;
-		small.width = s.width / 3;
+		small.height = s.height / 4.5;
+		small.width = s.width / 4.5;
 
 		resize(image, image, small);
 	}
@@ -28,11 +28,12 @@ int main(int, char)
 	vector<vector<vector<Point>>> objects;
 	int numberOfObjects = 0;
 
-	Mat mask = detector->findObjectsInImage(image, 88, 90, &objects, &numberOfObjects);
+	Mat mask = detector->findObjectsInImage(image, 50, 50, ObjectDetector::OutputMaskMode::CONVEX_HULL, &objects, &numberOfObjects);
 
 	imshow("FINAL RESULT",mask);
 	*/
 
+	
 	VideoCapture cap(1);
 	if (!cap.isOpened())
 	{
@@ -57,13 +58,13 @@ int main(int, char)
 
 			resize(image, image, small);
 		}
-		//imshow("Source", image);
+		imshow("Source", image);
 		vector<vector<vector<Point>>> objects;
 		int numberOfObjects = 0;
 
 		
 
-		Mat result = detector->findObjectsInImage(image, 70, 90, ObjectDetector::OutputMaskMode::PRECISE, &objects, &numberOfObjects);
+		Mat result = detector->findObjectsInImage(image, 50, 50, ObjectDetector::OutputMaskMode::CONVEX_HULL, &objects, &numberOfObjects);
 		imshow("FINAL RESULT", result);
 
 		if (waitKey(30) > 0)

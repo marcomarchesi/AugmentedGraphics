@@ -43,6 +43,14 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 		return 0;
 	}
 
+	return pearsonCorrelation(distribution, base);
+
+	//return pearsonCorrelation(distribution, base);
+
+}
+
+double Utility::spearmanCorrelation(std::vector<cv::Point>& distribution, std::vector<cv::Point>& base)
+{
 	// FIND MEANS
 	Point meanDistr(0, 0), meanBase(0, 0);
 	for (int i = 0; i < distribution.size(); i++)
@@ -88,8 +96,44 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 	correlation.x = product.x / sqrt(distr2.x * base2.x);
 	correlation.y = product.y / sqrt(distr2.y * base2.y);
 
-	return ((correlation.x + correlation.y) / 2)*100;
+	return ((correlation.x + correlation.y) / 2) * 100;
+}
 
+double Utility::pearsonCorrelation(std::vector<cv::Point>& distribution, std::vector<cv::Point>& base)
+{
+	Point2d totalProduct(0,0),
+		totalBase(0,0),
+		totalDistr(0,0),
+		totalBase2(0,0),
+		totalDistr2(0,0);
+
+	for (int i = 0; i < base.size(); i++)
+	{
+		totalProduct.x += distribution[i].x * base[i].x;
+		totalProduct.y += distribution[i].y * base[i].y;
+
+		totalBase.x += base[i].x;
+		totalBase.y += base[i].y;
+
+		totalDistr.x += distribution[i].x;
+		totalDistr.y += distribution[i].y;
+
+		totalBase2.x += base[i].x * base[i].x;
+		totalBase2.y += base[i].y * base[i].y;
+
+		totalDistr2.x += distribution[i].x * distribution[i].x;
+		totalDistr2.y += distribution[i].y * distribution[i].y;
+	}
+
+	Point2d correlation;
+
+	correlation.x = (totalProduct.x - (totalBase.x * totalDistr.x) / base.size()) /
+		((sqrt(totalBase2.x - (totalBase.x * totalBase.x / base.size()))) * (sqrt(totalDistr2.x - (totalDistr.x * totalDistr.x / base.size()))));
+
+	correlation.y = (totalProduct.y - (totalBase.y * totalDistr.y) / base.size()) /
+		((sqrt(totalBase2.y - (totalBase.y * totalBase.y / base.size()))) * (sqrt(totalDistr2.y - (totalDistr.y * totalDistr.y / base.size()))));
+
+	return (correlation.x + correlation.y) * 100 / 2;
 }
 
 std::vector<cv::Point> Utility::findCentroidsDistribution(std::vector<cv::Point> contour){
