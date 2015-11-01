@@ -29,10 +29,26 @@ namespace od
 		*/
 		std::vector<cv::Point> static findCentroidsDistribution(std::vector<cv::Point> contour);
 
+		std::vector<cv::Point> static findLargeCentroidsDistribution(std::vector<cv::Point> contour);
+
 	private:
 
 		double static pearsonCorrelation(std::vector<cv::Point>& distribution, std::vector<cv::Point>& base);
 
+		double static singlePearsonCorrelation(std::vector<double>& distribution, std::vector<double>& base);
+
 		double static spearmanCorrelation(std::vector<cv::Point>& distribution, std::vector<cv::Point>& base);
+
+		double static singleSpearmanCorrelation(std::vector<double>& distribution, std::vector<double>& base);
+
+		std::vector<cv::Point> static normalize(std::vector<cv::Point> source);
+
+		std::vector<double> static findDistancesFromCenter(std::vector<cv::Point> distribution);
+
+		std::vector<double> static findAnglesRespectCenter(std::vector<cv::Point> distribution);
+
+		bool static isLessThan(cv::Point a, cv::Point b, cv::Point center);
+
+		std::vector<cv::Point> static sortPoints(std::vector<cv::Point> points);
 	};
 }

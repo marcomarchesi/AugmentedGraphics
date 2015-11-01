@@ -47,17 +47,17 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	
 	// CREATE ACTIVE ZONE 80% AND 50% ---------------------
 
-	Point centre(image.size().width / 2, image.size().height / 2);
+	Point center(image.size().width / 2, image.size().height / 2);
 
 	int deleteHeight = image.size().height * _deleteFocus;
 	int deleteWidth = image.size().width * _deleteFocus;
-	int deleteX = centre.x - deleteWidth / 2;
-	int deleteY = centre.y - deleteHeight / 2;
+	int deleteX = center.x - deleteWidth / 2;
+	int deleteY = center.y - deleteHeight / 2;
 
 	int attenuationHeight = image.size().height * _attenuationFocus;
 	int attenuationWidth = image.size().width * _attenuationFocus;
-	int attenuationX = centre.x - attenuationWidth / 2;
-	int attenuationY = centre.y - attenuationHeight / 2;
+	int attenuationX = center.x - attenuationWidth / 2;
+	int attenuationY = center.y - attenuationHeight / 2;
 
 	Rect erase(deleteX, deleteY, deleteWidth, deleteHeight);
 	_deleteRect = erase;
@@ -194,8 +194,8 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 		// --------------------------------------------------
 
 		int min, max;
-		min = _minContourPoints - _minContourPoints / 2.5;
-		max = _minContourPoints + _minContourPoints / 2.5;
+		min = _minContourPoints - _minContourPoints / 2.51;
+		max = _minContourPoints + _minContourPoints / 2.51;
 		
 
 		if (approx.size() >= min && approx.size() <= max)
@@ -230,13 +230,14 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 	Utility utility;
 
 	// ID -- hamming
-	vector<pair<int, double>> hammingValues;
+	//vector<pair<int, double>> hammingValues;
 	double attenuation = 0;
 
 	for (int i = 0; i < approxContours[0].size(); i++)
 	{
 		attenuation = 0;
-
+		
+		/*
 #ifdef DEBUG_MODE
 		Mat tempImg(Size(1000, 1000), CV_8UC1);
 		tempImg = cv::Scalar(0);
@@ -247,6 +248,7 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 		drawContours(tempImg, vect, -1, cv::Scalar(255), 1, CV_AA);
 		//imshow(to_string(i), tempImg);
 #endif
+		*/
 
 		Moments m = moments(approxContours[0][i], true);
 		int cx = int(m.m10 / m.m00);
@@ -260,37 +262,32 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 			c.y <= (_attenuationRect.y + _attenuationRect.height)))
 			attenuation = 15;
 
-		double correlation = utility.correlationWithBase(approxContours[0][i], _baseShape);
-
-		if ((correlation-attenuation) < correlationThreshold)
-			continue;
-
-#ifdef DEBUG_MODE
-		cout << "Correlation " << to_string(i) << " --- " << to_string(correlation) << endl;
-#endif
 
 		double hamming = utility.calculateContourPercentageCompatibility(approxContours[0][i], _baseShape);
-		if (hamming == 0)
-			continue;
-
+		double correlation = utility.correlationWithBase(approxContours[0][i], _baseShape);
 
 #ifdef DEBUG_MODE
-		cout << to_string(i) << " Contour Hamming Percentage " << " " << to_string(hamming-attenuation) << endl << endl;
+		cout << to_string(i) << " Contour Hamming Percentage " << " " << to_string(hamming - attenuation) << endl;
+		cout << "Correlation " << to_string(i) << " --- " << to_string(correlation) << endl << endl;
 #endif
+		
+		if ((hamming - attenuation) < hammingThreshold)
+			continue;
 
-		hammingValues.push_back(pair<int, double>(i, (hamming-attenuation)));
+		if ((correlation - attenuation) < correlationThreshold)
+			continue;
 
+		//hammingValues.push_back(pair<int, double>(i, (hamming-attenuation)));
+		objects.push_back(approxContours[0][i]);
 	}
 
+	/*
 	for (int i = 0; i < hammingValues.size(); i++)
 	{
 		if (hammingValues[i].second >= hammingThreshold && hammingValues[i].second != 100.0)
 			objects.push_back(approxContours[0].at(hammingValues[i].first));
 	}
-
-#ifdef DEBUG_MODE
-	cout << "Possible valid objects: " << to_string(objects.size()) << endl;
-#endif
+	*/
 
 
 	*numberOfObject = (objects.size());

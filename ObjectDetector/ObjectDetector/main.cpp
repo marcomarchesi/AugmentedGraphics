@@ -13,7 +13,7 @@ int main(int, char)
 		exit(1);
 
 	/*
-	Mat image = imread("OAC/coso.jpg");
+	Mat image = imread("OAC/chess.jpg");
 	
 	if (image.size().height > 800 || image.size().width > 800)
 	{
@@ -34,7 +34,7 @@ int main(int, char)
 	*/
 
 	
-	VideoCapture cap(1);
+	VideoCapture cap(0);
 	if (!cap.isOpened())
 	{
 		return 0;
@@ -46,7 +46,7 @@ int main(int, char)
 	for (;;)
 	{
 
-		//waitKey(0);
+		waitKey(0);
 		cap >> image;
 		
 
@@ -64,7 +64,7 @@ int main(int, char)
 
 		
 
-		Mat result = detector->findObjectsInImage(image, 50, 50, ObjectDetector::OutputMaskMode::CONVEX_HULL, &objects, &numberOfObjects);
+		Mat result = detector->findObjectsInImage(image, 80, 80, ObjectDetector::OutputMaskMode::CONVEX_HULL, &objects, &numberOfObjects);
 		imshow("FINAL RESULT", result);
 
 		if (waitKey(30) > 0)
