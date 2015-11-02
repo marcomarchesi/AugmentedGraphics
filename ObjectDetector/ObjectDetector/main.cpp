@@ -13,7 +13,7 @@ int main(int, char)
 		exit(1);
 
 	
-	Mat image = imread("oac/chess.jpg");
+	Mat image = imread("mecha2.jpg");
 	
 	if (image.size().height > 800 || image.size().width > 800)
 	{

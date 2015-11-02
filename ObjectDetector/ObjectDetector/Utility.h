@@ -9,8 +9,9 @@ namespace od
 	public:
 
 		enum CentroidDetectionMode{
-			ONE_CENTROID_FOR_SPLIT,
-			FIVE_CENTROID_FOR_SPLIT
+			ONE_LOOP,
+			TWO_LOOP,
+			THREE_LOOP
 		};
 
 		/*
