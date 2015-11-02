@@ -2,7 +2,6 @@
 #include "commonInclude.h"
 #include <math.h>
 
-
 using namespace cv;
 using namespace std;
 using namespace od;
@@ -42,55 +41,34 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 		return 0;
 	}
 	*/
+
+	vector<KeyPoint> distrK, baseK;
+	findCentroidsDistributionRecursive(contour, distrK, CentroidDetectionMode::ONE_CENTROID_FOR_SPLIT);
+	findCentroidsDistributionRecursive(baseContour, baseK, CentroidDetectionMode::ONE_CENTROID_FOR_SPLIT);
 	
+	Mat img(Size(4000, 4000), CV_8UC1);
+	img = Scalar(0);
+	vector<vector<Point>> tempVector;
+	tempVector.push_back(contour);
+	
+	drawContours(img, tempVector, -1, cv::Scalar(255), 5, CV_AA);
+	
+	for (int i = 0; i < distrK.size(); i++)
+		circle(img, distrK[i].pt, 5*distrK[i].size, Scalar(255), -1, 8, 0);
+	
+	
+
 	if (distribution.size() != base.size())
 		return 0;
 
-	/*
-	vector<Point> normC = normalize(contour);
-	vector<Point> normB = normalize(baseContour);
 
-#ifdef DEBUG_MODE
-	Mat tempImg(Size(4000, 4000), CV_8UC1);
-	tempImg = cv::Scalar(0);
-
-	vector<vector<Point>> vect;
-	vect.push_back(normC);
-	drawContours(tempImg, vect, -1, cv::Scalar(255), 1, CV_AA);
-
-	vect.push_back(normB);
-	drawContours(tempImg, vect, -1, cv::Scalar(255), 1, CV_AA);
-
-#endif
-
-
-	Moments mDistr, mBase;
-	mDistr = moments(normC);
-	mBase = moments(normB);
-
-	double eccDistr, eccBase, distrMajor, distrMinor, baseMajor, baseMinor;
-	
-	double deltaDistr = sqrt(4 * pow(mDistr.m11, 2) - pow((mDistr.m20 - mDistr.m02), 2));
-	double deltaBase = sqrt(4 * pow(mBase.m11, 2) - pow((mBase.m20 - mBase.m02), 2));
-
-	distrMajor = sqrt(abs(((mDistr.m20 + mDistr.m02) / 2) + deltaDistr));
-	distrMinor = sqrt(abs(((mDistr.m20 + mDistr.m02) / 2) - deltaDistr));	
-	baseMajor = sqrt(abs(((mBase.m20 + mBase.m02) / 2) + deltaBase));
-	baseMinor = sqrt(abs(((mBase.m20 + mBase.m02) / 2) - deltaBase));
-
-	double distrAdiff = distrMajor - distrMinor;
-	double baseAdiff = baseMajor - baseMinor;
-	double axesDifference = abs(distrAdiff - baseAdiff);
-	*/
-	
 	double centroidsCorrelation = spearmanCorrelation(distribution, base);	
 	double distancesCorrelation = singleSpearmanCorrelation(findDistancesFromCenter(distribution), findDistancesFromCenter(base));
 	double anglesCorrelation = singleSpearmanCorrelation(findAnglesRespectCenter(distribution), findAnglesRespectCenter(base));
-	double centroidHamming = calculateContourPercentageCompatibility(sortPoints(distribution), sortPoints(base));
-
-	double correlation = (centroidsCorrelation + distancesCorrelation + anglesCorrelation + centroidHamming) / 4;
-
 	
+	
+	double correlation = (centroidsCorrelation + distancesCorrelation + anglesCorrelation) / 3;
+
 
 	return correlation;
 
@@ -599,11 +577,7 @@ std::vector<cv::Point> Utility::findLargeCentroidsDistribution(std::vector<cv::P
 		else if (shape.size() > 1)
 		{
 			/*
-			for (int i = 0; i < shape.size(); i++)
-			{
-				if (shape[i].size() > shape[0].size())
-					shape[0] = shape[i];
-			}
+			
 			*/
 
 			Moments m = moments(sub, true);
@@ -726,6 +700,155 @@ std::vector<cv::Point> Utility::findLargeCentroidsDistribution(std::vector<cv::P
 
 	return retCentr;
 }
+
+void Utility::findCentroidsDistributionRecursive(std::vector<cv::Point> contour,
+													std::vector<cv::KeyPoint>& centroids,													
+													CentroidDetectionMode mode)
+{
+	Rect box = boundingRect(contour);
+
+	box.height += 4;
+	box.width += 4;
+	
+	if (box.x == 1)
+		box.x -= 1;
+	if (box.y == 1)
+		box.y -= 1;	
+
+	
+	// center of the contour
+	Moments m = moments(contour, true);
+	int cx = int(m.m10 / m.m00);
+	int cy = int(m.m01 / m.m00);
+	Point2f center(cx, cy);
+
+	
+	Size size(box.x + box.width + cx, box.y + box.height + cy);
+	Mat img(size, CV_8UC1);
+	img = Scalar(0);
+	vector<vector<Point>> tempVector;
+	tempVector.push_back(contour);
+	drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
+
+
+	circle(img, center, 3, Scalar(255), -1, 8, 0);
+
+	centroids.push_back(KeyPoint(center, 1));
+
+	
+	// SPLIT ======================= = LEVEL 1 = ===============================
+
+	if (mode == CentroidDetectionMode::ONE_CENTROID_FOR_SPLIT)
+	{
+		int x = box.x;
+		int y = box.y;
+		int h = box.height;
+		int w = box.width;			
+
+		Rect leftSplit(x, y, cx - x, h);
+		Rect rigthSplit(cx, y, w, h);
+		Rect topSplit(x, y, w, cy - y);
+		Rect bottomSplit(x, cy, w, h);		
+
+		vector<Rect> splitRect;
+		splitRect.push_back(leftSplit);
+		splitRect.push_back(rigthSplit);
+		splitRect.push_back(topSplit);
+		splitRect.push_back(bottomSplit);
+
+		for (int i = 0; i < splitRect.size(); i++)
+		{
+			img = Scalar(0);
+			drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
+			Mat sub = img(splitRect[i]);
+
+			int dilation_size = 1;
+			Mat element = getStructuringElement(0, Size(2 * dilation_size, 2 * dilation_size), Point(dilation_size, dilation_size));
+			dilate(sub, sub, element);
+
+			vector<vector<Point>> shape;
+			findContours(sub, shape, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
+
+			if (shape.size() == 1) // FIRST LEVEL LOOP
+			{
+				// center of the contour
+				Moments m = moments(shape[0], true);
+				int cx = int(m.m10 / m.m00) + splitRect[i].x;
+				int cy = int(m.m01 / m.m00) + splitRect[i].y;
+				Point2f center(cx, cy);
+
+
+				//Size size(box.x + box.width + cx, box.y + box.height + cy);
+				//Mat img(size, CV_8UC1);
+				img = Scalar(0);				
+				drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
+
+
+				circle(img, center, 6, Scalar(255), -1, 8, 0);
+				centroids.push_back(KeyPoint(center, 2));
+				
+
+				// SPLIT ========================== = LEVEL 2 = ===============================
+
+				int x = splitRect[i].x;
+				int y = splitRect[i].y;
+				int h = splitRect[i].height;
+				int w = splitRect[i].width;
+
+				
+				Rect leftSplit_1(x, y, cx - x, h);
+				Rect rigthSplit_1(cx, y, w, h);
+				Rect topSplit_1(x, y, w, cy - y);
+				Rect bottomSplit_1(x, cy, w, h);
+
+				vector<Rect> splitRect_1;
+				splitRect_1.push_back(leftSplit_1);
+				splitRect_1.push_back(rigthSplit_1);
+				splitRect_1.push_back(topSplit_1);
+				splitRect_1.push_back(bottomSplit_1);
+
+				for (int j = 0; j < splitRect_1.size(); j++)
+				{
+					img = Scalar(0);
+					drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
+					Mat sub = img(splitRect_1[j]);
+
+					int dilation_size = 1;
+					Mat element = getStructuringElement(0, Size(2 * dilation_size, 2 * dilation_size), Point(dilation_size, dilation_size));
+					dilate(sub, sub, element);
+
+					vector<vector<Point>> shape_1;
+					findContours(sub, shape_1, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
+
+					if (shape_1.size() == 1) // SECOND LEVEL LOOP
+					{
+						// center of the contour
+						Moments m = moments(shape_1[0], true);
+						int cx = int(m.m10 / m.m00) + splitRect_1[j].x;
+						int cy = int(m.m01 / m.m00) + splitRect_1[j].y;
+						Point2f center(cx, cy);
+
+
+						//Size size(box.x + box.width + cx, box.y + box.height + cy);
+						//Mat img(size, CV_8UC1);
+						img = Scalar(0);
+						drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
+
+
+						circle(img, center, 9, Scalar(255), -1, 8, 0);
+						centroids.push_back(KeyPoint(center, 3));
+						
+					}
+
+				}
+
+			}
+							
+		}
+	}
+}
+
+
 
 std::vector<double> Utility::findDistancesFromCenter(std::vector<cv::Point> distribution)
 {

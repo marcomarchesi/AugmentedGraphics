@@ -4,8 +4,14 @@ namespace od
 {
 	class Utility{
 
+		
 
 	public:
+
+		enum CentroidDetectionMode{
+			ONE_CENTROID_FOR_SPLIT,
+			FIVE_CENTROID_FOR_SPLIT
+		};
 
 		/*
 		uses the cv::matchShape to calculate the hamming distance between the contour and the baseShape
@@ -30,6 +36,10 @@ namespace od
 		std::vector<cv::Point> static findCentroidsDistribution(std::vector<cv::Point> contour);
 
 		std::vector<cv::Point> static findLargeCentroidsDistribution(std::vector<cv::Point> contour);
+
+		void static findCentroidsDistributionRecursive(std::vector<cv::Point> contour,
+														std::vector<cv::KeyPoint>& centroids,
+														CentroidDetectionMode mode);
 
 	private:
 
