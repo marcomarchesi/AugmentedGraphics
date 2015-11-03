@@ -1,4 +1,7 @@
 #include "opencv2/opencv.hpp"
+#include "opencv2/core/core.hpp"
+//#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/features2d.hpp"
 
 namespace od
 {
@@ -10,8 +13,7 @@ namespace od
 
 		enum CentroidDetectionMode{
 			ONE_LOOP,
-			TWO_LOOP,
-			THREE_LOOP
+			TWO_LOOP
 		};
 
 		/*
@@ -28,6 +30,7 @@ namespace od
 		@base: the contour of the base image
 		*/
 		double static correlationWithBase(std::vector<cv::Point> contour, std::vector<cv::Point> baseContour);
+		double static correlationWithBase(std::vector<cv::Point> contour, std::vector<cv::Point> baseContour, cv::Mat &queryImage, cv::Mat &baseImage);
 
 		/*
 		find the centroids distribution of a contour
@@ -38,7 +41,7 @@ namespace od
 
 		std::vector<cv::Point> static findLargeCentroidsDistribution(std::vector<cv::Point> contour);
 
-		void static findCentroidsDistributionRecursive(std::vector<cv::Point> contour,
+		void static findCentroidsKeypoints(std::vector<cv::Point> contour,
 														std::vector<cv::KeyPoint>& centroids,
 														CentroidDetectionMode mode);
 

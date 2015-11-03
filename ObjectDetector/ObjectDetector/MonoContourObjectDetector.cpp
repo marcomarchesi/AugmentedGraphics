@@ -34,7 +34,7 @@ bool MonoContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 	}
 
 	_baseShape = compatibleContours[0][minID];
-
+	_baseImage = baseImage;
 
 
 	return true;
@@ -211,6 +211,9 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	vector<vector<vector<Point>>> retVector;
 	retVector.push_back(approxContours);
 
+	if (retVector.size() > 0)
+		_queryImage = image;
+
 	return retVector;
 
 }
@@ -264,7 +267,7 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 
 
 		double hamming = utility.calculateContourPercentageCompatibility(approxContours[0][i], _baseShape);
-		double correlation = utility.correlationWithBase(approxContours[0][i], _baseShape);
+		double correlation = utility.correlationWithBase(approxContours[0][i], _baseShape, _queryImage, _baseImage);
 
 #ifdef DEBUG_MODE
 		cout << to_string(i) << " Contour Hamming Percentage " << " " << to_string(hamming - attenuation) << endl;

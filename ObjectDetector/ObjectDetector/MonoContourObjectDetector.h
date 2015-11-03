@@ -26,5 +26,7 @@ namespace od
 
 		std::vector<cv::Point> _baseShape;
 
+		cv::Mat _queryImage;
+		cv::Mat _baseImage;
 	};
 }
