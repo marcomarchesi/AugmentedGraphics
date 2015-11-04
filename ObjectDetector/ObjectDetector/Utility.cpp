@@ -57,6 +57,8 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 		b.push_back(baseK[i].pt);
 	}
 
+	double hausdorff = calculateHausdorffDistance(c, b);
+
 	double centroidsCorrelation = spearmanCorrelation(c, b);	
 	double distancesCorrelation = singleSpearmanCorrelation(findDistancesFromCenter(c), findDistancesFromCenter(b));
 	double anglesCorrelation = singleSpearmanCorrelation(findAnglesRespectCenter(c), findAnglesRespectCenter(b));
@@ -69,32 +71,54 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 	
 }
 
-double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<cv::Point> baseContour, cv::Mat &queryImage, cv::Mat &baseImage)
+double Utility::correlationWithBaseMatcher(std::vector<cv::Point> contour, std::vector<cv::Point> baseContour)
 {
 	vector<KeyPoint> contourK, baseK;
 	findCentroidsKeypoints(contour, contourK, CentroidDetectionMode::TWO_LOOP);
 	findCentroidsKeypoints(baseContour, baseK, CentroidDetectionMode::TWO_LOOP);
 
-
-	Mat img = queryImage;
-	Mat baseImg = baseImage;
-
 	
-	cvtColor(img, img, CV_BGR2GRAY);
-	cvtColor(baseImg, baseImg, CV_BGR2GRAY);	
+	Rect cRect = boundingRect(contour),
+		bRect = boundingRect(baseContour);
+
+	Mat img(Size(cRect.x + cRect.width, cRect.y + cRect.height), CV_8UC1),
+		sample(Size(bRect.x + bRect.width, bRect.y + bRect.height), CV_8UC1);
+
+	img = Scalar(0);
+	sample = Scalar(0);
+
+	vector<vector<Point>> cVect, bVect;
+	cVect.push_back(contour);
+	bVect.push_back(baseContour);
+
+	drawContours(img, cVect, -1, cv::Scalar(255), -1, CV_AA);
+	drawContours(sample, bVect, -1, cv::Scalar(255), -1, CV_AA);
+	
+
+	//Mat img = queryImage;
+	//Mat sample = baseImage;
 
 	Mat contourDescriptors, baseDescriptors;
 	
 	Ptr<ORB> ex = ORB::create();
 	ex->compute(img, contourK, contourDescriptors);
-	ex->compute(baseImg, baseK, baseDescriptors);
+	ex->compute(sample, baseK, baseDescriptors);
+	//ex->detectAndCompute(img, noArray(), contourK, contourDescriptors, false);
+	//ex->detectAndCompute(sample, noArray(), baseK, baseDescriptors, false);
 
 
 	BFMatcher bruteForce;
 	vector<DMatch> matches;
 	bruteForce.match(contourDescriptors, baseDescriptors, matches);
+	
 
-	double max_dist = 0; double min_dist = 100;
+	Mat img_matches;
+	drawMatches(img, contourK, sample, baseK,
+		matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+		vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+
+	double max_dist = numeric_limits<double>::min();
+	double min_dist = numeric_limits<double>::max();
 
 	//-- Quick calculation of max and min distances between keypoints
 	for (int i = 0; i < contourDescriptors.rows; i++)
@@ -104,6 +128,7 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 		if (dist > max_dist) max_dist = dist;
 	}
 
+
 	printf("-- Max dist : %f \n", max_dist);
 	printf("-- Min dist : %f \n", min_dist);
 
@@ -111,15 +136,15 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 
 	for (int i = 0; i < contourDescriptors.rows; i++)
 	{
-		if (matches[i].distance <= max(2 * min_dist, 0.02))
+		if (matches[i].distance <= max(2 * min_dist, max_dist/4))
 		{
 			good_matches.push_back(matches[i]);
 		}
 	}
 
 	//-- Draw only "good" matches
-	Mat img_matches;
-	drawMatches(img, contourK, baseImg, baseK,
+	img_matches = Scalar(0);
+	drawMatches(img, contourK, sample, baseK,
 		good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
 		vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
@@ -430,6 +455,60 @@ double Utility::singleSpearmanCorrelation(std::vector<double>& distribution, std
 	correlation = product / sqrt(distr2 * base2);
 
 	return correlation * 100;	
+}
+
+double Utility::calculateHausdorffDistance( std::vector<cv::Point> contour, std::vector<cv::Point> base)
+{
+	vector<Point> contourN = contour;
+	vector<Point> baseN = base;
+	
+	double maxDistCB = 0;
+
+	for (int i = 0; i < contourN.size(); i++)
+	{
+		double minB = numeric_limits<double>::max();
+		double tempDist;
+
+		for (int j = 0; j < baseN.size(); j++)
+		{
+			double cat1 = (contourN[i].x - baseN[j].x);
+			double cat2 = (contourN[i].y - baseN[j].y);
+			tempDist = sqrt(cat1*cat1 + cat2*cat2);
+
+			if (tempDist < minB)
+				minB = tempDist;
+		}
+		maxDistCB += minB;
+	}
+
+	Moments m = moments(contourN);
+	maxDistCB /= m.m00;
+
+	// ===========================================================
+
+	double maxDistBC = 0;
+
+	for (int i = 0; i < baseN.size(); i++)
+	{
+		double minC = numeric_limits<double>::max();
+		double tempDist;
+
+		for (int j = 0; j < contourN.size(); j++)
+		{
+			double cat1 = (baseN[i].x - contourN[j].x);
+			double cat2 = (baseN[i].y - contourN[j].y);
+			tempDist = sqrt(cat1*cat1 + cat2*cat2);
+
+			if (tempDist < minC)
+				minC = tempDist;
+		}
+		maxDistBC += minC;
+	}
+
+	Moments m1 = moments(baseN);
+	maxDistBC /= m1.m00;
+
+	return max(maxDistBC, maxDistCB);
 }
 
 // -----------------------------------------------------------------------------------------------------------------------

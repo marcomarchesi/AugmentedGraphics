@@ -133,8 +133,8 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 		// REMOVE TOO EXTERNAL SHAPES -------------
 
-//		if (i == 20 || i==74 || i==102)
-//			cout << "";
+		//if (i == 20 || i==50 || i==54)
+		//cout << "";
 
 		Moments m = moments(approx, true);
 		int cx = int(m.m10 / m.m00);
@@ -267,7 +267,7 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 
 
 		double hamming = utility.calculateContourPercentageCompatibility(approxContours[0][i], _baseShape);
-		double correlation = utility.correlationWithBase(approxContours[0][i], _baseShape, _queryImage, _baseImage);
+		double correlation = utility.correlationWithBase(approxContours[0][i], _baseShape);
 
 #ifdef DEBUG_MODE
 		cout << to_string(i) << " Contour Hamming Percentage " << " " << to_string(hamming - attenuation) << endl;

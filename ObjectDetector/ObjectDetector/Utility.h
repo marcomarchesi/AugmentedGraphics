@@ -30,7 +30,7 @@ namespace od
 		@base: the contour of the base image
 		*/
 		double static correlationWithBase(std::vector<cv::Point> contour, std::vector<cv::Point> baseContour);
-		double static correlationWithBase(std::vector<cv::Point> contour, std::vector<cv::Point> baseContour, cv::Mat &queryImage, cv::Mat &baseImage);
+		double static correlationWithBaseMatcher(std::vector<cv::Point> contour, std::vector<cv::Point> baseContour);
 
 		/*
 		find the centroids distribution of a contour
@@ -64,5 +64,7 @@ namespace od
 		bool static isLessThan(cv::Point a, cv::Point b, cv::Point center);
 
 		std::vector<cv::Point> static sortPoints(std::vector<cv::Point> points);
+
+		double static calculateHausdorffDistance(std::vector<cv::Point> contour, std::vector<cv::Point> base);
 	};
 }

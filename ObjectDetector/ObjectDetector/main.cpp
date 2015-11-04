@@ -8,18 +8,19 @@ int main(int, char)
 {
 	Mat baseImage = imread("mecha2.jpg");
 
-	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(58, 1);
+	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(52, 1);
 	if(!detector->loadImage(baseImage))
 		exit(1);
 
 	/*
 	Mat image = imread("mecha2.jpg");
-	/*
+	
+	
 	if (image.size().height > 800 || image.size().width > 800)
 	{
 		Size s = image.size(), small;
-		small.height = s.height / 4.5;
-		small.width = s.width / 4.5;
+		small.height = s.height / 1;
+		small.width = s.width / 1;
 
 		resize(image, image, small);
 	}
@@ -49,7 +50,7 @@ int main(int, char)
 		waitKey(0);
 		cap >> image;
 		
-		/*
+		
 		if (image.size().height > 800 || image.size().width > 800)
 		{
 			Size s = image.size(), small;
@@ -60,7 +61,7 @@ int main(int, char)
 		}
 		imshow("Source", image);
 
-		*/
+		
 		vector<vector<vector<Point>>> objects;
 		int numberOfObjects = 0;
 		
