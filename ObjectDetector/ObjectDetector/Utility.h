@@ -2,6 +2,7 @@
 #include "opencv2/core/core.hpp"
 //#include "opencv2/features2d/features2d.hpp"
 #include "opencv2/features2d.hpp"
+#include "opencv2/shape.hpp"
 
 namespace od
 {
@@ -55,16 +56,14 @@ namespace od
 
 		double static singleSpearmanCorrelation(std::vector<double>& distribution, std::vector<double>& base);
 
-		std::vector<cv::Point> static normalize(std::vector<cv::Point> source);
+		//std::vector<cv::Point> static normalize(std::vector<cv::Point> source);
 
 		std::vector<double> static findDistancesFromCenter(std::vector<cv::Point> distribution);
 
 		std::vector<double> static findAnglesRespectCenter(std::vector<cv::Point> distribution);
 
-		bool static isLessThan(cv::Point a, cv::Point b, cv::Point center);
-
-		std::vector<cv::Point> static sortPoints(std::vector<cv::Point> points);
-
 		double static calculateHausdorffDistance(std::vector<cv::Point> contour, std::vector<cv::Point> base);
+
+		double static checkKeyPointsMatch(std::vector<cv::KeyPoint> &contour, std::vector<cv::KeyPoint> &base);
 	};
 }

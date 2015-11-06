@@ -19,8 +19,8 @@ int main(int, char)
 	if (image.size().height > 800 || image.size().width > 800)
 	{
 		Size s = image.size(), small;
-		small.height = s.height / 1;
-		small.width = s.width / 1;
+		small.height = s.height / 3;
+		small.width = s.width / 3;
 
 		resize(image, image, small);
 	}
@@ -35,7 +35,7 @@ int main(int, char)
 	*/
 
 	
-	VideoCapture cap(1);
+	VideoCapture cap(0);
 	if (!cap.isOpened())
 	{
 		return 0;
@@ -47,7 +47,7 @@ int main(int, char)
 	for (;;)
 	{
 
-		waitKey(0);
+		//waitKey(0);
 		cap >> image;
 		
 		
@@ -67,7 +67,7 @@ int main(int, char)
 		
 		
 
-		Mat result = detector->findObjectsInImage(image, 80, 80, ObjectDetector::OutputMaskMode::CONVEX_HULL, &objects, &numberOfObjects);
+		Mat result = detector->findObjectsInImage(image, 75, 80, ObjectDetector::OutputMaskMode::PRECISE, &objects, &numberOfObjects);
 		imshow("FINAL RESULT", result);
 
 		if (waitKey(30) > 0)

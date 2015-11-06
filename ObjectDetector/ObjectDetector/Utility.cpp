@@ -44,27 +44,32 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 	vector<KeyPoint> contourK, baseK;
 	findCentroidsKeypoints(contour, contourK, CentroidDetectionMode::TWO_LOOP);
 	findCentroidsKeypoints(baseContour, baseK, CentroidDetectionMode::TWO_LOOP);
-		
+
+	double correlation = 0;
 	
 	if (contourK.size() != baseK.size())
 		return 0;
 
-
 	vector<Point> c, b;
 	for (int i = 0; i < contourK.size(); i++)
-	{ 
+	{
 		c.push_back(contourK[i].pt);
 		b.push_back(baseK[i].pt);
 	}
 
-	double hausdorff = calculateHausdorffDistance(c, b);
+	
 
+	//double km = checkKeyPointsMatch(contourK, baseK);
+	//if (km < 60)
+	//	correlation -= 15;
+
+		
 	double centroidsCorrelation = spearmanCorrelation(c, b);	
-	double distancesCorrelation = singleSpearmanCorrelation(findDistancesFromCenter(c), findDistancesFromCenter(b));
+	//double distancesCorrelation = singleSpearmanCorrelation(findDistancesFromCenter(c), findDistancesFromCenter(b));
 	double anglesCorrelation = singleSpearmanCorrelation(findAnglesRespectCenter(c), findAnglesRespectCenter(b));
 	
 	
-	double correlation = (centroidsCorrelation + distancesCorrelation + anglesCorrelation) / 3;
+	correlation += (centroidsCorrelation + anglesCorrelation) / 2;
 
 
 	return correlation;
@@ -150,68 +155,7 @@ double Utility::correlationWithBaseMatcher(std::vector<cv::Point> contour, std::
 
 
 
-	/*
-	double max_dist = 0; double min_dist = 100;
-
-	//-- Quick calculation of max and min distances between keypoints
-	for (int i = 0; i < contourDescriptors.rows; i++)
-	{
-	double dist = matches[i].distance;
-	if (dist < min_dist) min_dist = dist;
-	if (dist > max_dist) max_dist = dist;
-	}
-
-	printf("-- Max dist : %f \n", max_dist);
-	printf("-- Min dist : %f \n", min_dist);
-
-	//-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
-	std::vector< DMatch > good_matches;
-
-	for (int i = 0; i < contourDescriptors.rows; i++)
-	{
-	if (matches[i].distance < 3 * min_dist)
-	{
-	good_matches.push_back(matches[i]);
-	}
-	}
-
-	Mat img_matches;
-	drawMatches(baseImg, baseK, img, contourK,
-	matches, img_matches, Scalar::all(-1), Scalar::all(-1),
-	vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-
-	//-- Localize the object
-	std::vector<Point2f> obj;
-	std::vector<Point2f> scene;
-
-	for (int i = 0; i < matches.size(); i++)
-	{
-	//-- Get the keypoints from the good matches
-	obj.push_back(baseK[matches[i].queryIdx].pt);
-	scene.push_back(contourK[matches[i].trainIdx].pt);
-	}
-
-	Mat H = findHomography(obj, scene, CV_RANSAC);
-
-	//-- Get the corners from the image_1 ( the object to be "detected" )
-	std::vector<Point2f> obj_corners(4);
-	obj_corners[0] = cvPoint(0, 0); obj_corners[1] = cvPoint(baseImg.cols, 0);
-	obj_corners[2] = cvPoint(baseImg.cols, baseImg.rows); obj_corners[3] = cvPoint(0, baseImg.rows);
-	std::vector<Point2f> scene_corners(4);
-
-	perspectiveTransform(obj_corners, scene_corners, H);
-
-	//-- Draw lines between the corners (the mapped object in the scene - image_2 )
-	line(img_matches, scene_corners[0] + Point2f(baseImg.cols, 0), scene_corners[1] + Point2f(baseImg.cols, 0), Scalar(0, 255, 0), 4);
-	line(img_matches, scene_corners[1] + Point2f(baseImg.cols, 0), scene_corners[2] + Point2f(baseImg.cols, 0), Scalar(0, 255, 0), 4);
-	line(img_matches, scene_corners[2] + Point2f(baseImg.cols, 0), scene_corners[3] + Point2f(baseImg.cols, 0), Scalar(0, 255, 0), 4);
-	line(img_matches, scene_corners[3] + Point2f(baseImg.cols, 0), scene_corners[0] + Point2f(baseImg.cols, 0), Scalar(0, 255, 0), 4);
-
-	//-- Show detected matches
-	imshow("Good Matches & Object detection", img_matches);
-
-	waitKey(0);
-	*/
+	
 
 		
 
@@ -513,7 +457,7 @@ double Utility::calculateHausdorffDistance( std::vector<cv::Point> contour, std:
 
 // -----------------------------------------------------------------------------------------------------------------------
 
-std::vector<cv::Point> Utility::normalize(std::vector<cv::Point> source)
+/*std::vector<cv::Point> Utility::normalize(std::vector<cv::Point> source)
 {
 	vector<Point> norm;
 
@@ -530,7 +474,7 @@ std::vector<cv::Point> Utility::normalize(std::vector<cv::Point> source)
 	}
 
 	return norm;
-}
+}*/
 
 // FEATURE DETECTION FUNCTIONS ---------------------------------------------------------------------------------------------
 
@@ -1181,51 +1125,84 @@ std::vector<double> Utility::findAnglesRespectCenter(std::vector<cv::Point> dist
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-bool Utility::isLessThan(Point a, Point b, Point center)
+double Utility::checkKeyPointsMatch(std::vector<cv::KeyPoint> &contour, std::vector<cv::KeyPoint> &base)
 {
-	if (a.x - center.x >= 0 && b.x - center.x < 0)
-		return true;
-	if (a.x - center.x < 0 && b.x - center.x >= 0)
-		return false;
-	if (a.x - center.x == 0 && b.x - center.x == 0) {
-		if (a.y - center.y >= 0 || b.y - center.y >= 0)
-			return a.y > b.y;
-		return b.y > a.y;
-	}
+	vector<Point2f> contourK, baseK;
+	double delta = 40;
 
-	// compute the cross product of vectors (center -> a) x (center -> b)
-	int det = (a.x - center.x) * (b.y - center.y) - (b.x - center.x) * (a.y - center.y);
-	if (det < 0)
-		return true;
-	if (det > 0)
-		return false;
-
-	// points a and b are on the same line from the center
-	// check which point is closer to the center
-	int d1 = (a.x - center.x) * (a.x - center.x) + (a.y - center.y) * (a.y - center.y);
-	int d2 = (b.x - center.x) * (b.x - center.x) + (b.y - center.y) * (b.y - center.y);
-	return d1 > d2;
-}
-
-vector<Point> Utility::sortPoints(vector<Point> points)
-{
-	vector<Point> ret;
-	int sortingPositions[18] = { 0, 2, 1, 6, 5, 20, 10, 11, 16, 17, 15, 18, 19, 14, 21, 9, 4, 3 };
+	for (int i = 0; i < base.size(); i++)
+		baseK.push_back(base[i].pt);
 	
-	for (int i = 0; i < 18; i++)
-	{
-		if (points[sortingPositions[i]] == Point(0, 0))
-			continue;
-		ret.push_back(points[sortingPositions[i]]);
-	}
+	for (int i = 0; i < contour.size(); i++)
+		contourK.push_back(contour[i].pt);
+
+	Rect baseRect = boundingRect(baseK);
+	Rect contourRect = boundingRect(contourK);
+
+	Mat H = findHomography(contourK, baseK, 0);
+
+	
+	vector<Point2f> contourKT;
+	perspectiveTransform(contourK, contourKT, H);
 
 #ifdef DEBUG_MODE
-	Mat tempImg(Size(4000, 4000), CV_8UC1);
-	tempImg = cv::Scalar(0);
-	vector<vector<Point>> vect;
-	vect.push_back(ret);
-	drawContours(tempImg, vect, -1, cv::Scalar(255), 1, CV_AA);
+	Size bs(baseRect.x + baseRect.width, baseRect.y + baseRect.height);
+	Mat tempImg(bs, CV_8UC3);
+	tempImg = Scalar(0);
+
+	for (int i = 0; i < baseK.size(); i++)
+		circle(tempImg, baseK[i], 6, Scalar(0, 0, 255), -1, 8, 0);
+
+	for (int i = 0; i < contourKT.size(); i++)
+	{
+		circle(tempImg, contourKT[i], 6, Scalar(0, 255, 0), -1, 8, 0);
+		circle(tempImg, contourK[i], 6, Scalar(0, 255, 0), -1, 8, 0);
+	}
 #endif
 
-	return ret;
+
+	map<int, double> matchMap;
+	vector<Point2f> goodMatch;
+	int tot = 0;
+
+	for (int i = 0; i < contourKT.size(); i++)
+	{
+		
+		double minDist = numeric_limits<double>::max();
+		Point2f matchBasePoint(0, 0);
+		int matchID = -1;
+
+		for (int j = 0; j < baseK.size(); j++)
+		{
+			double cat1 = (contourKT[i].x - baseK[j].x);
+			double cat2 = (contourKT[i].y - baseK[j].y);
+			double dist = sqrt(cat1*cat1 + cat2*cat2);
+
+			if (dist < minDist && matchMap.count(j) == 0)
+			{
+				minDist = dist;
+				matchBasePoint = baseK[j];
+				matchID = j;
+			}
+		}
+
+		if (minDist <= delta)
+		{
+			matchMap.insert(pair<int, double>(matchID, minDist));
+			//goodMatch.push_back(matchBasePoint);
+			goodMatch.push_back(contourKT[i]);
+			tot++;
+		}
+		else
+		{
+			//goodMatch.push_back(Point2f(0, 0));
+			goodMatch.push_back(baseK[i]);
+
+		}
+		
+	}
+
+	double matchPercentage = tot * 100 / baseK.size();
+
+	return matchPercentage/2;
 }
