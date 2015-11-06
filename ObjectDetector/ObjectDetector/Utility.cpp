@@ -6,6 +6,283 @@ using namespace cv;
 using namespace std;
 using namespace od;
 
+
+std::vector<cv::Rect> Utility::splitRect(Rect box, Point centroid, int level)
+{
+	vector<Rect> splitRect;
+
+	int x = box.x;
+	int y = box.y;
+	int h = box.height;
+	int w = box.width;
+
+	int cx = centroid.x;
+	int cy = centroid.y;
+
+	if (level == 0)
+	{
+		Rect leftSplit(x, y, cx - x, h);
+		Rect rigthSplit(cx, y, w, h);
+		Rect topSplit(x, y, w, cy - y);
+		Rect bottomSplit(x, cy, w, h);
+
+		splitRect.push_back(leftSplit);
+		splitRect.push_back(rigthSplit);
+		splitRect.push_back(topSplit);
+		splitRect.push_back(bottomSplit);
+	}
+	else if (level == 1)
+	{
+		Rect leftSplit_1(x, y, cx - x, h);
+		Rect rigthSplit_1(cx, y, (w + x) - cx, h);
+		Rect topSplit_1(x, y, w, cy - y);
+		Rect bottomSplit_1(x, cy, w, (h + y) - cy);
+
+		splitRect.push_back(leftSplit_1);
+		splitRect.push_back(rigthSplit_1);
+		splitRect.push_back(topSplit_1);
+		splitRect.push_back(bottomSplit_1);
+	}
+
+	return splitRect;
+}
+
+double Utility::calculateContourPercentageCompatibility(std::vector<cv::Point> contour, std::vector<cv::Point> base, HammingMode mode)
+{
+
+	vector<double> hammings;
+
+	Rect boxC = boundingRect(contour);
+	Rect boxB = boundingRect(base);
+
+
+	// center of the contour
+	Moments mC = moments(contour, true);
+	int cx = int(mC.m10 / mC.m00);
+	int cy = int(mC.m01 / mC.m00);
+	Point2f centerC(cx, cy);
+
+	Moments mB = moments(base, true);
+	int bx = int(mB.m10 / mB.m00);
+	int by = int(mB.m01 / mB.m00);
+	Point2f centerB(bx, by);
+
+
+	Size sizeC(boxC.x + boxC.width + cx, boxC.y + boxC.height + cy);
+	Mat imgC(sizeC, CV_8UC1);
+	imgC = Scalar(0);
+	vector<vector<Point>> tempVectorC;
+	tempVectorC.push_back(contour);
+	drawContours(imgC, tempVectorC, -1, cv::Scalar(255), 1, CV_AA);
+
+	Size sizeB(boxB.x + boxB.width + bx, boxB.y + boxB.height + by);
+	Mat imgB(sizeB, CV_8UC1);
+	imgB = Scalar(0);
+	vector<vector<Point>> tempVectorB;
+	tempVectorB.push_back(base);
+	drawContours(imgB, tempVectorB, -1, cv::Scalar(255), 1, CV_AA);
+
+	
+
+	// SPLIT ======================= = LEVEL 1 = ===============================
+
+	
+	vector<Rect> splitC = splitRect(boxC, centerC, 0);
+	vector<Rect> splitB = splitRect(boxB, centerB, 0);
+	
+
+	for (int i = 0; i < splitC.size(); i++)
+	{
+		imgC = Scalar(0);
+		imgB = Scalar(0);
+		drawContours(imgC, tempVectorC, -1, cv::Scalar(255), 1, CV_AA);
+		drawContours(imgB, tempVectorB, -1, cv::Scalar(255), 1, CV_AA);
+
+		
+		Mat subC = imgC(splitC[i]);
+		Mat subB = imgB(splitB[i]);
+
+		int dilation_size = 1;
+		Mat element = getStructuringElement(0, Size(2 * dilation_size, 2 * dilation_size), Point(dilation_size, dilation_size));
+		dilate(subC, subC, element);
+		dilate(subB, subB, element);
+
+		vector<vector<Point>> shapeC;
+		vector<vector<Point>> shapeB;
+		findContours(subC, shapeC, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
+		findContours(subB, shapeB, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
+
+
+		int cx_1, cy_1;
+		int bx_1, by_1;
+
+		if (shapeC.size() == 0 || shapeB.size() == 0) // FIRST LEVEL LOOP
+		{
+			hammings.push_back(0);
+		}
+		else if (shapeC.size() == 1 && shapeB.size() == 1)
+		{
+			// center of the contour
+			Moments mC = moments(shapeC[0], true);
+			cx_1 = int(mC.m10 / mC.m00) + splitC[i].x;
+			cy_1 = int(mC.m01 / mC.m00) + splitC[i].y;
+
+			Moments mB = moments(shapeB[0], true);
+			bx_1 = int(mB.m10 / mB.m00) + splitB[i].x;
+			by_1 = int(mB.m01 / mB.m00) + splitB[i].y;
+
+			double hamming = matchShapes(shapeC[0], shapeB[0], mode, 0.0);
+			hamming = (1 - hamming) * 100;
+
+			hammings.push_back(hamming);
+		}
+		else
+		{
+			// center of the contour
+			Moments mC = moments(subC, true);
+			cx_1 = int(mC.m10 / mC.m00) + splitC[i].x;
+			cy_1 = int(mC.m01 / mC.m00) + splitC[i].y;
+
+			Moments mB = moments(subB, true);
+			bx_1 = int(mB.m10 / mB.m00) + splitB[i].x;
+			by_1 = int(mB.m01 / mB.m00) + splitB[i].y;
+
+			double hamming = 0;
+
+			for (int k = 0; k < shapeC.size(); k++)
+			{
+				if (shapeC.size() < shapeB.size())
+					hamming += matchShapes(shapeC[k], shapeB[k+1], mode, 0.0);
+				else
+					hamming += matchShapes(shapeC[k], shapeB[k], mode, 0.0);
+
+			}
+			hamming /= shapeC.size();
+			hamming = (1 - hamming) * 100;
+
+			hammings.push_back(hamming);
+		}
+
+		Point2f centerC(cx_1, cy_1);
+		Point2f centerB(bx_1, by_1);
+
+		//Size size(box.x + box.width + cx, box.y + box.height + cy);
+		//Mat img(size, CV_8UC1);
+		//img = Scalar(0);
+		//drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
+		
+		if (mode != CentroidDetectionMode::ONE_LOOP)
+		{
+			// SPLIT ========================== = LEVEL 2 = ===============================
+
+			vector<Rect> splitC_1 = splitRect(splitC[i], centerC, 1);
+			vector<Rect> splitB_1 = splitRect(splitB[i], centerB, 1);
+
+
+			for (int j = 0; j < splitC_1.size(); j++)
+			{
+				imgC = Scalar(0);
+				imgB = Scalar(0);
+				drawContours(imgC, tempVectorC, -1, cv::Scalar(255), 1, CV_AA);
+				drawContours(imgB, tempVectorB, -1, cv::Scalar(255), 1, CV_AA);
+
+				Mat subC = imgC(splitC_1[j]);
+				Mat subB = imgB(splitB_1[j]);
+
+				int dilation_size = 1;
+				Mat element = getStructuringElement(0, Size(2 * dilation_size, 2 * dilation_size), Point(dilation_size, dilation_size));
+				dilate(subC, subC, element);
+				dilate(subB, subB, element);
+
+				vector<vector<Point>> shapeC_1;
+				vector<vector<Point>> shapeB_1;
+				findContours(subC, shapeC_1, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
+				findContours(subB, shapeB_1, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
+
+				int cx_2, cy_2;
+				int bx_2, by_2;
+
+
+				
+
+				if (shapeC_1.size() == 0 || shapeB_1.size() == 0) // FIRST LEVEL LOOP
+				{
+					hammings.push_back(0);
+				}
+				else if (shapeC_1.size() == 1 && shapeB_1.size() == 1)
+				{
+					// center of the contour
+					Moments mC = moments(shapeC_1[0], true);
+					cx_2 = int(mC.m10 / mC.m00) + splitC[i].x;
+					cy_2 = int(mC.m01 / mC.m00) + splitC[i].y;
+
+					Moments mB = moments(shapeB_1[0], true);
+					bx_2 = int(mB.m10 / mB.m00) + splitB[i].x;
+					by_2 = int(mB.m01 / mB.m00) + splitB[i].y;
+
+					double hamming = matchShapes(shapeC_1[0], shapeB_1[0], mode, 0.0);
+					hamming = (1 - hamming) * 100;
+
+					hammings.push_back(hamming);
+				}
+				else
+				{
+					
+
+					// center of the contour
+					Moments mC = moments(subC, true);
+					cx_2 = int(mC.m10 / mC.m00) + splitC[i].x;
+					cy_2 = int(mC.m01 / mC.m00) + splitC[i].y;
+
+					Moments mB = moments(subB, true);
+					bx_2 = int(mB.m10 / mB.m00) + splitB[i].x;
+					by_2 = int(mB.m01 / mB.m00) + splitB[i].y;
+
+					double hamming = 0;
+					for (int k = 0; k < shapeC_1.size(); k++)
+					{
+						if (shapeC_1.size() < shapeB_1.size())
+							hamming += matchShapes(shapeC_1[k], shapeB_1[k + 1], mode, 0.0);
+						else
+							hamming += matchShapes(shapeC_1[k], shapeB_1[k], mode, 0.0);
+
+					}
+					hamming /= shapeC.size();
+					hamming = (1 - hamming) * 100;
+					hammings.push_back(hamming);
+
+				}
+
+
+				Point2f centerC(cx_2, cy_2);
+				Point2f centerB(bx_2, by_2);
+
+
+				//Size size(box.x + box.width + cx, box.y + box.height + cy);
+				//Mat img(size, CV_8UC1);
+				//img = Scalar(0);
+				//drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);			
+
+			}
+
+		}// ========================== = LEVEL 2 = ===============================		
+
+	}
+
+	double H = 0;
+
+	for (int i = 0; i < hammings.size(); i++)
+	{
+		if (hammings[i] > 0)
+			H += hammings[i];
+	}
+
+	H /= (hammings.size() - 1);
+
+	return H;
+}
+
+
 double Utility::calculateContourPercentageCompatibility(std::vector<cv::Point> contour, std::vector<cv::Point> base)
 {
 
@@ -58,11 +335,7 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 	}
 
 	
-
-	//double km = checkKeyPointsMatch(contourK, baseK);
-	//if (km < 60)
-	//	correlation -= 15;
-
+	
 		
 	double centroidsCorrelation = spearmanCorrelation(c, b);	
 	//double distancesCorrelation = singleSpearmanCorrelation(findDistancesFromCenter(c), findDistancesFromCenter(b));
@@ -482,33 +755,7 @@ std::vector<cv::Point> Utility::findCentroidsDistribution(std::vector<cv::Point>
 
 	vector<Point> retCentr;
 
-	/*
-	int minX = numeric_limits<int>::max(),
-		maxX = numeric_limits<int>::min(),
-		minY = numeric_limits<int>::max(),
-		maxY = numeric_limits<int>::min();
-
-	for (int i = 0; i < contour.size(); i++)
-	{
-		if (contour[i].x < minX)
-			minX = contour[i].x;
-
-		if (contour[i].x > maxX)
-			maxX = contour[i].x;
-
-		if (contour[i].y < minY)
-			minY = contour[i].y;
-
-		if (contour[i].y > maxY)
-			maxY = contour[i].y;
-	}
-
-	Size size(maxX + minX, maxY + minY);
-	*/
-
 	
-
-//	vector<Point> normalized = normalize(contour);
 
 	Rect box = boundingRect(contour);
 	Size size(box.x + box.width, box.y + box.height);
@@ -1129,6 +1376,7 @@ double Utility::checkKeyPointsMatch(std::vector<cv::KeyPoint> &contour, std::vec
 {
 	vector<Point2f> contourK, baseK;
 	double delta = 40;
+
 
 	for (int i = 0; i < base.size(); i++)
 		baseK.push_back(base[i].pt);

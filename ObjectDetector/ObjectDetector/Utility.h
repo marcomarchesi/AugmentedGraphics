@@ -17,6 +17,11 @@ namespace od
 			TWO_LOOP
 		};
 
+		enum HammingMode{
+			CV_CONTOURS_MATCH_I1,
+			CV_CONTOURS_MATCH_I3
+		};
+
 		/*
 		uses the cv::matchShape to calculate the hamming distance between the contour and the baseShape
 		retrun a the percentage value of the hamming distance
@@ -24,6 +29,7 @@ namespace od
 		@base: the contour of the base image
 		*/
 		double static calculateContourPercentageCompatibility(std::vector<cv::Point> contour, std::vector<cv::Point> base);
+		double static calculateContourPercentageCompatibility(std::vector<cv::Point> contour, std::vector<cv::Point> base, HammingMode mode);
 
 		/*
 		calculate che correlation between two distributions of points
@@ -47,6 +53,8 @@ namespace od
 														CentroidDetectionMode mode);
 
 	private:
+
+		std::vector<cv::Rect> static splitRect(cv::Rect box, cv::Point centroid, int level);
 
 		double static pearsonCorrelation(std::vector<cv::Point>& distribution, std::vector<cv::Point>& base);
 

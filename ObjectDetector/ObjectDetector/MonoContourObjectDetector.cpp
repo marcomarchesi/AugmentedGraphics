@@ -122,7 +122,7 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 		convexHull(contours[i], hull, false);
 
-		double epsilon = contours[i].size() * 0.005;
+		double epsilon = contours[i].size() * 0.003;
 		approxPolyDP(contours[i], approx, epsilon, true);
 
 #ifdef DEBUG_MODE			
@@ -250,14 +250,15 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 			attenuation = 15;
 
 
-		double originalHamming = utility.calculateContourPercentageCompatibility(_originalQueryShapes[i], _originalBaseShape);
+		double hamming = utility.calculateContourPercentageCompatibility(_originalQueryShapes[i], _originalBaseShape, Utility::HammingMode::CV_CONTOURS_MATCH_I3);
 
-		double hamming = utility.calculateContourPercentageCompatibility(approxContours[0][i], _baseShape);
+		//double hamming = utility.calculateContourPercentageCompatibility(approxContours[0][i], _baseShape);
 		//double correlation = utility.correlationWithBase(approxContours[0][i], _baseShape);
+
 		double correlation = utility.correlationWithBase(_originalQueryShapes[i], _originalBaseShape);
 
-		correlation = (correlation + originalHamming) / 2;
-		hamming = (hamming + originalHamming) / 2;
+		correlation = (correlation + hamming) / 2;
+		//hamming = (hamming + originalHamming) / 2;
 
 #ifdef DEBUG_MODE
 		cout << to_string(i) << " Contour Hamming Percentage " << " " << to_string(hamming - attenuation) << endl;
