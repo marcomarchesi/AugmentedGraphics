@@ -14,12 +14,18 @@ namespace od
 
 		enum CentroidDetectionMode{
 			ONE_LOOP,
-			TWO_LOOP
+			TWO_LOOP,
+			THREE_LOOP
 		};
 
 		enum HammingMode{
 			CV_CONTOURS_MATCH_I1,
 			CV_CONTOURS_MATCH_I3
+		};
+
+		enum SplitMode{
+			MODE_1,
+			MODE_2
 		};
 
 		/*
@@ -49,12 +55,12 @@ namespace od
 		std::vector<cv::Point> static findLargeCentroidsDistribution(std::vector<cv::Point> contour);
 
 		void static findCentroidsKeypoints(std::vector<cv::Point> contour,
-														std::vector<cv::KeyPoint>& centroids,
+														std::vector<cv::Point>& centroids,
 														CentroidDetectionMode mode);
 
 	private:
 
-		std::vector<cv::Rect> static splitRect(cv::Rect box, cv::Point centroid, int level);
+		std::vector<cv::Rect> static splitRect(cv::Rect box, cv::Point centroid, int level, SplitMode mode);
 
 		double static pearsonCorrelation(std::vector<cv::Point>& distribution, std::vector<cv::Point>& base);
 
@@ -63,8 +69,6 @@ namespace od
 		double static spearmanCorrelation(std::vector<cv::Point>& distribution, std::vector<cv::Point>& base);
 
 		double static singleSpearmanCorrelation(std::vector<double>& distribution, std::vector<double>& base);
-
-		//std::vector<cv::Point> static normalize(std::vector<cv::Point> source);
 
 		std::vector<double> static findDistancesFromCenter(std::vector<cv::Point> distribution);
 

@@ -12,15 +12,18 @@ int main(int, char)
 	if(!detector->loadImage(baseImage))
 		exit(1);
 
-	
+	/*
 	Mat image = imread("mecha2.jpg");
+
+	if (image.empty())
+		exit(2);
 	
 	
 	if (image.size().height > 800 || image.size().width > 800)
 	{
 		Size s = image.size(), small;
-		small.height = s.height / 1.1;
-		small.width = s.width / 1.1;
+		small.height = s.height / 3;
+		small.width = s.width / 3;
 
 		resize(image, image, small);
 	}
@@ -32,10 +35,10 @@ int main(int, char)
 	Mat mask = detector->findObjectsInImage(image, 50, 50, ObjectDetector::OutputMaskMode::CONVEX_HULL, &objects, &numberOfObjects);
 
 	imshow("FINAL RESULT",mask);
-	
+	*/
 
-	/*
-	VideoCapture cap(1);
+	
+	VideoCapture cap(0);
 	if (!cap.isOpened())
 	{
 		return 0;
@@ -47,7 +50,7 @@ int main(int, char)
 	for (;;)
 	{
 
-		waitKey(0);
+		//waitKey(0);
 		cap >> image;
 		
 		
@@ -67,13 +70,13 @@ int main(int, char)
 		
 		
 
-		Mat result = detector->findObjectsInImage(image, 75, 80, ObjectDetector::OutputMaskMode::PRECISE, &objects, &numberOfObjects);
+		Mat result = detector->findObjectsInImage(image, 75, 50, ObjectDetector::OutputMaskMode::CONVEX_HULL, &objects, &numberOfObjects);
 		imshow("FINAL RESULT", result);
 
 		if (waitKey(30) > 0)
 			break;
 	}
-	*/
+	
 
 	waitKey(0);
 	return 0;

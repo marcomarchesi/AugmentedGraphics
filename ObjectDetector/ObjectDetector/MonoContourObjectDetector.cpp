@@ -250,14 +250,15 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 			attenuation = 15;
 
 
-		double hamming = utility.calculateContourPercentageCompatibility(_originalQueryShapes[i], _originalBaseShape, Utility::HammingMode::CV_CONTOURS_MATCH_I3);
+		//double hamming = utility.calculateContourPercentageCompatibility(_originalQueryShapes[i], _originalBaseShape, Utility::HammingMode::CV_CONTOURS_MATCH_I3);
 
-		//double hamming = utility.calculateContourPercentageCompatibility(approxContours[0][i], _baseShape);
+		double hamming = utility.calculateContourPercentageCompatibility(_originalQueryShapes[i], _originalBaseShape);
+		
 		//double correlation = utility.correlationWithBase(approxContours[0][i], _baseShape);
 
 		double correlation = utility.correlationWithBase(_originalQueryShapes[i], _originalBaseShape);
 
-		correlation = (correlation + hamming) / 2;
+		//correlation = (correlation + hamming) / 2;
 		//hamming = (hamming + originalHamming) / 2;
 
 #ifdef DEBUG_MODE

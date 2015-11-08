@@ -7,7 +7,7 @@ using namespace std;
 using namespace od;
 
 
-std::vector<cv::Rect> Utility::splitRect(Rect box, Point centroid, int level)
+std::vector<cv::Rect> Utility::splitRect(Rect box, Point centroid, int level, SplitMode mode)
 {
 	vector<Rect> splitRect;
 
@@ -19,55 +19,99 @@ std::vector<cv::Rect> Utility::splitRect(Rect box, Point centroid, int level)
 	int cx = centroid.x;
 	int cy = centroid.y;
 
-	if (level == 0)
+	if (mode == SplitMode::MODE_1)
 	{
-		Rect leftSplit(x, y, cx - x, h);
-		Rect rigthSplit(cx, y, w, h);
-		Rect topSplit(x, y, w, cy - y);
-		Rect bottomSplit(x, cy, w, h);
+		if (level == 1)
+		{
+			Rect leftSplit(x, y, cx - x, h);
+			Rect rigthSplit(cx, y, w, h);
+			Rect topSplit(x, y, w, cy - y);
+			Rect bottomSplit(x, cy, w, h);
 
-		splitRect.push_back(leftSplit);
-		splitRect.push_back(rigthSplit);
-		splitRect.push_back(topSplit);
-		splitRect.push_back(bottomSplit);
+			splitRect.push_back(leftSplit);
+			splitRect.push_back(rigthSplit);
+			splitRect.push_back(topSplit);
+			splitRect.push_back(bottomSplit);
+		}
+		else if (level == 2)
+		{
+			Rect leftSplit_1(x, y, cx - x, h);
+			Rect rigthSplit_1(cx, y, (w + x) - cx, h);
+			Rect topSplit_1(x, y, w, cy - y);
+			Rect bottomSplit_1(x, cy, w, (h + y) - cy);
+
+			splitRect.push_back(leftSplit_1);
+			splitRect.push_back(rigthSplit_1);
+			splitRect.push_back(topSplit_1);
+			splitRect.push_back(bottomSplit_1);
+		}
+		else if (level == 3)
+		{
+			Rect leftSplit_1(x, y, cx - x, h);
+			Rect rigthSplit_1(cx, y, (w + x) - cx, h);
+			Rect topSplit_1(x, y, w, cy - y);
+			Rect bottomSplit_1(x, cy, w, (h + y) - cy);
+
+			splitRect.push_back(leftSplit_1);
+			splitRect.push_back(rigthSplit_1);
+			splitRect.push_back(topSplit_1);
+			splitRect.push_back(bottomSplit_1);
+		}
 	}
-	else if (level == 1)
+	else
 	{
-		Rect leftSplit_1(x, y, cx - x, h);
-		Rect rigthSplit_1(cx, y, (w + x) - cx, h);
-		Rect topSplit_1(x, y, w, cy - y);
-		Rect bottomSplit_1(x, cy, w, (h + y) - cy);
+		if (level == 1)
+		{
+			Rect TLSplit(x, y, cx - x, cy - y);
+			Rect TRSplit(cx, y, w, cy - y);
+			Rect BLSplit(x, cy, cx - x, h);
+			Rect BRSplit(cx, cy, w, h);
 
-		splitRect.push_back(leftSplit_1);
-		splitRect.push_back(rigthSplit_1);
-		splitRect.push_back(topSplit_1);
-		splitRect.push_back(bottomSplit_1);
+			splitRect.push_back(TLSplit);
+			splitRect.push_back(TRSplit);
+			splitRect.push_back(BLSplit);
+			splitRect.push_back(BRSplit);
+		}
+		else if (level > 1)
+		{
+			Rect TLSplit(x, y, cx - x, cy - y);
+			Rect TRSplit(cx, y, (w + x) - cx, cy - y);
+			Rect BLSplit(x, cy, cx - x, (h + y) - cy);
+			Rect BRSplit(cx, cy, (w + x) - cx, (h + y) - cy);
+
+			splitRect.push_back(TLSplit);
+			splitRect.push_back(TRSplit);
+			splitRect.push_back(BLSplit);
+			splitRect.push_back(BRSplit);
+		}
+		
+
 	}
+	
 
 	return splitRect;
 }
 
 double Utility::calculateContourPercentageCompatibility(std::vector<cv::Point> contour, std::vector<cv::Point> base, HammingMode mode)
 {
+	vector<vector<vector<Point>>> contourSplitContour, baseSplitContour;
 
-	vector<double> hammings;
-
+	
 	Rect boxC = boundingRect(contour);
 	Rect boxB = boundingRect(base);
 
-
-	// center of the contour
-	Moments mC = moments(contour, true);
-	int cx = int(mC.m10 / mC.m00);
-	int cy = int(mC.m01 / mC.m00);
-	Point2f centerC(cx, cy);
 
 	Moments mB = moments(base, true);
 	int bx = int(mB.m10 / mB.m00);
 	int by = int(mB.m01 / mB.m00);
 	Point2f centerB(bx, by);
 
-
+	// center of the contour
+	Moments mC = moments(contour, true);
+	int cx = int(mC.m10 / mC.m00);
+	int cy = int(mC.m01 / mC.m00);
+	Point2f centerC(cx, cy);
+	
 	Size sizeC(boxC.x + boxC.width + cx, boxC.y + boxC.height + cy);
 	Mat imgC(sizeC, CV_8UC1);
 	imgC = Scalar(0);
@@ -82,13 +126,16 @@ double Utility::calculateContourPercentageCompatibility(std::vector<cv::Point> c
 	tempVectorB.push_back(base);
 	drawContours(imgB, tempVectorB, -1, cv::Scalar(255), 1, CV_AA);
 
-	
+
+
+
+	// ========================== DETECT SPLIT CONTOURS ==================================================
 
 	// SPLIT ======================= = LEVEL 1 = ===============================
 
 	
-	vector<Rect> splitC = splitRect(boxC, centerC, 0);
-	vector<Rect> splitB = splitRect(boxB, centerB, 0);
+	vector<Rect> splitC = splitRect(boxC, centerC, 1, SplitMode::MODE_1);
+	vector<Rect> splitB = splitRect(boxB, centerB, 1, SplitMode::MODE_1);
 	
 
 	for (int i = 0; i < splitC.size(); i++)
@@ -103,26 +150,25 @@ double Utility::calculateContourPercentageCompatibility(std::vector<cv::Point> c
 		Mat subB = imgB(splitB[i]);
 
 		int dilation_size = 1;
-		Mat element = getStructuringElement(0, Size(2 * dilation_size, 2 * dilation_size), Point(dilation_size, dilation_size));
+		Mat element = getStructuringElement(1, Size(2 * dilation_size, 2 * dilation_size), Point(dilation_size, dilation_size));
 		dilate(subC, subC, element);
 		dilate(subB, subB, element);
+		
 
 		vector<vector<Point>> shapeC;
 		vector<vector<Point>> shapeB;
 		findContours(subC, shapeC, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 		findContours(subB, shapeB, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 
+		contourSplitContour.push_back(shapeC);
+		baseSplitContour.push_back(shapeB);
 
 		int cx_1, cy_1;
 		int bx_1, by_1;
 
-		if (shapeC.size() == 0 || shapeB.size() == 0) // FIRST LEVEL LOOP
+		
+		if (!(shapeC.size() == 0 || shapeB.size() == 0)) // FIRST LEVEL LOOP
 		{
-			hammings.push_back(0);
-		}
-		else if (shapeC.size() == 1 && shapeB.size() == 1)
-		{
-			// center of the contour
 			Moments mC = moments(shapeC[0], true);
 			cx_1 = int(mC.m10 / mC.m00) + splitC[i].x;
 			cy_1 = int(mC.m01 / mC.m00) + splitC[i].y;
@@ -130,53 +176,19 @@ double Utility::calculateContourPercentageCompatibility(std::vector<cv::Point> c
 			Moments mB = moments(shapeB[0], true);
 			bx_1 = int(mB.m10 / mB.m00) + splitB[i].x;
 			by_1 = int(mB.m01 / mB.m00) + splitB[i].y;
-
-			double hamming = matchShapes(shapeC[0], shapeB[0], mode, 0.0);
-			hamming = (1 - hamming) * 100;
-
-			hammings.push_back(hamming);
 		}
-		else
-		{
-			// center of the contour
-			Moments mC = moments(subC, true);
-			cx_1 = int(mC.m10 / mC.m00) + splitC[i].x;
-			cy_1 = int(mC.m01 / mC.m00) + splitC[i].y;
-
-			Moments mB = moments(subB, true);
-			bx_1 = int(mB.m10 / mB.m00) + splitB[i].x;
-			by_1 = int(mB.m01 / mB.m00) + splitB[i].y;
-
-			double hamming = 0;
-
-			for (int k = 0; k < shapeC.size(); k++)
-			{
-				if (shapeC.size() < shapeB.size())
-					hamming += matchShapes(shapeC[k], shapeB[k+1], mode, 0.0);
-				else
-					hamming += matchShapes(shapeC[k], shapeB[k], mode, 0.0);
-
-			}
-			hamming /= shapeC.size();
-			hamming = (1 - hamming) * 100;
-
-			hammings.push_back(hamming);
-		}
-
+		
+		
 		Point2f centerC(cx_1, cy_1);
 		Point2f centerB(bx_1, by_1);
 
-		//Size size(box.x + box.width + cx, box.y + box.height + cy);
-		//Mat img(size, CV_8UC1);
-		//img = Scalar(0);
-		//drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
-		
+				
 		if (mode != CentroidDetectionMode::ONE_LOOP)
 		{
 			// SPLIT ========================== = LEVEL 2 = ===============================
 
-			vector<Rect> splitC_1 = splitRect(splitC[i], centerC, 1);
-			vector<Rect> splitB_1 = splitRect(splitB[i], centerB, 1);
+			vector<Rect> splitC_1 = splitRect(splitC[i], centerC, 2, SplitMode::MODE_1);
+			vector<Rect> splitB_1 = splitRect(splitB[i], centerB, 2, SplitMode::MODE_1);
 
 
 			for (int j = 0; j < splitC_1.size(); j++)
@@ -193,23 +205,19 @@ double Utility::calculateContourPercentageCompatibility(std::vector<cv::Point> c
 				Mat element = getStructuringElement(0, Size(2 * dilation_size, 2 * dilation_size), Point(dilation_size, dilation_size));
 				dilate(subC, subC, element);
 				dilate(subB, subB, element);
-
+				
 				vector<vector<Point>> shapeC_1;
 				vector<vector<Point>> shapeB_1;
 				findContours(subC, shapeC_1, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 				findContours(subB, shapeB_1, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 
+				contourSplitContour.push_back(shapeC_1);
+				baseSplitContour.push_back(shapeB_1);
+
 				int cx_2, cy_2;
 				int bx_2, by_2;
 
-
-				
-
-				if (shapeC_1.size() == 0 || shapeB_1.size() == 0) // FIRST LEVEL LOOP
-				{
-					hammings.push_back(0);
-				}
-				else if (shapeC_1.size() == 1 && shapeB_1.size() == 1)
+				if (!(shapeC_1.size() == 0 || shapeB_1.size() == 0)) // FIRST LEVEL LOOP
 				{
 					// center of the contour
 					Moments mC = moments(shapeC_1[0], true);
@@ -220,66 +228,171 @@ double Utility::calculateContourPercentageCompatibility(std::vector<cv::Point> c
 					bx_2 = int(mB.m10 / mB.m00) + splitB[i].x;
 					by_2 = int(mB.m01 / mB.m00) + splitB[i].y;
 
-					double hamming = matchShapes(shapeC_1[0], shapeB_1[0], mode, 0.0);
-					hamming = (1 - hamming) * 100;
-
-					hammings.push_back(hamming);
 				}
-				else
-				{
-					
-
-					// center of the contour
-					Moments mC = moments(subC, true);
-					cx_2 = int(mC.m10 / mC.m00) + splitC[i].x;
-					cy_2 = int(mC.m01 / mC.m00) + splitC[i].y;
-
-					Moments mB = moments(subB, true);
-					bx_2 = int(mB.m10 / mB.m00) + splitB[i].x;
-					by_2 = int(mB.m01 / mB.m00) + splitB[i].y;
-
-					double hamming = 0;
-					for (int k = 0; k < shapeC_1.size(); k++)
-					{
-						if (shapeC_1.size() < shapeB_1.size())
-							hamming += matchShapes(shapeC_1[k], shapeB_1[k + 1], mode, 0.0);
-						else
-							hamming += matchShapes(shapeC_1[k], shapeB_1[k], mode, 0.0);
-
-					}
-					hamming /= shapeC.size();
-					hamming = (1 - hamming) * 100;
-					hammings.push_back(hamming);
-
-				}
-
+				
 
 				Point2f centerC(cx_2, cy_2);
-				Point2f centerB(bx_2, by_2);
-
-
-				//Size size(box.x + box.width + cx, box.y + box.height + cy);
-				//Mat img(size, CV_8UC1);
-				//img = Scalar(0);
-				//drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);			
-
+				Point2f centerB(bx_2, by_2);	
 			}
 
 		}// ========================== = LEVEL 2 = ===============================		
 
 	}
 
+
+	// ========================== FIND BEST MATCH ==================================================
+
+	
+
+	vector<DMatch> goodMatch;
+	map<int, double> matched;
+
+	Mat cc(Size(1000, 1000), CV_8UC1),
+		cb(Size(1000, 1000) , CV_8UC1);
+
+	vector<vector<Point>> tempC, tempB;
+
+	tempC.push_back(contour);
+	tempB.push_back(base);
+	contourSplitContour.push_back(tempC);
+	baseSplitContour.push_back(tempB);
+
+	/*
+	for (int i = 0; i < contourSplitContour.size(); i++)
+	{
+		if (contourSplitContour[i].size() != 0)
+		{
+
+			double maxHamming = numeric_limits<double>::lowest();
+			int maxID = -1;
+
+			if (i == 18)
+				cout << "";
+
+			for (int j = 0; j < baseSplitContour.size(); j++)
+			{
+				double hamming = 0;
+
+				/*
+				if (contourSplitContour[i].size() == 1 && baseSplitContour[j].size() == 1)
+				{
+					hamming = matchShapes(contourSplitContour[i], baseSplitContour[j], mode, 0.0);					
+				}
+				else
+				{
+					/*
+					for (int k = 0; k < contourSplitContour[i].size(); k++)
+					{
+						vector<Point> hullC, hullB;
+						//convexHull(contourSplitContour[i][k], hullC);
+
+						//double epsilon = contourSplitContour[i][k].size() * 0.003;
+						//approxPolyDP(contourSplitContour[i][k], hullC, epsilon, true);
+
+						hullC = contourSplitContour[i][k];
+
+						if (contourSplitContour[i].size() < baseSplitContour[j].size())
+						{
+							//convexHull(baseSplitContour[j][k + 1], hullB);
+							//double epsilon = baseSplitContour[j][k + 1].size() * 0.003;
+							//approxPolyDP(baseSplitContour[j][k + 1], hullB, epsilon, true);
+
+							hullB = baseSplitContour[j][k+1];
+						}
+						else if (contourSplitContour[i].size() == baseSplitContour[j].size())
+						{
+							//convexHull(baseSplitContour[j][k], hullB);
+							//double epsilon = baseSplitContour[j][k].size() * 0.003;
+							//approxPolyDP(baseSplitContour[j][k], hullB, epsilon, true);
+
+							hullB = baseSplitContour[j][k];
+						}
+						else
+						{
+							if (k < baseSplitContour[j].size())
+							{
+								//convexHull(baseSplitContour[j][k], hullB);
+								//double epsilon = baseSplitContour[j][k].size() * 0.003;
+								//approxPolyDP(baseSplitContour[j][k], hullB, epsilon, true);
+
+								hullB = baseSplitContour[j][k];
+
+							}
+						}
+
+						tempC.clear();
+						tempB.clear();
+						tempC.push_back(hullC);
+						tempB.push_back(hullB);
+
+						cc = Scalar(0);
+						cb = Scalar(0);
+
+						drawContours(cc, tempC, -1, cv::Scalar(255), 1, CV_AA);
+						drawContours(cb, tempB, -1, cv::Scalar(255), 1, CV_AA);
+
+						hamming += matchShapes(hullC, hullB, mode, 0.0);
+					}
+					hamming /= contourSplitContour.size();
+				}
+				
+
+				cc = Scalar(0);
+				cb = Scalar(0);
+
+				drawContours(cc, contourSplitContour[i], -1, cv::Scalar(255), -1, CV_AA);
+				drawContours(cb, baseSplitContour[j], -1, cv::Scalar(255), -1, CV_AA);
+
+				hamming = matchShapes(cc, cb, mode, 0.0);
+
+				hamming = (1 - hamming) * 100;
+				if (hamming > maxHamming && matched.count(j) == 0)
+				{
+					maxHamming = hamming;
+					maxID = j;					
+				}
+			}
+
+			goodMatch.push_back(DMatch(i, maxID, maxHamming));
+			matched.insert(pair<int, double>(maxID, maxHamming));
+		}
+		else
+		{
+			goodMatch.push_back(DMatch(i, -1, 0));
+		}
+	}
+	*/
+	
+
+	double hamming = 0, H = 0;
+	for (int i = 0; i < contourSplitContour.size(); i++)
+	{
+		cc = Scalar(0);
+		cb = Scalar(0);
+
+		drawContours(cc, contourSplitContour[i], -1, cv::Scalar(255), -1, CV_AA);
+		drawContours(cb, baseSplitContour[i], -1, cv::Scalar(255), -1, CV_AA);
+
+		hamming = matchShapes(cc, cb, mode, 0.0);
+		hamming = (1 - hamming) * 100;
+
+		H += hamming;
+	}
+	
+	/*
 	double H = 0;
 
-	for (int i = 0; i < hammings.size(); i++)
+	for (int i = 0; i < goodMatch.size(); i++)
 	{
-		if (hammings[i] > 0)
-			H += hammings[i];
+		//if (goodMatch[i].distance > 0)
+			H += goodMatch[i].distance;
 	}
-
-	H /= (hammings.size() - 1);
+	*/
+	H /= (contourSplitContour.size() + 1);
+	
 
 	return H;
+	
 }
 
 
@@ -318,37 +431,39 @@ double Utility::correlationWithBase(std::vector<cv::Point> contour, std::vector<
 	}
 	*/
 
-	vector<KeyPoint> contourK, baseK;
-	findCentroidsKeypoints(contour, contourK, CentroidDetectionMode::TWO_LOOP);
-	findCentroidsKeypoints(baseContour, baseK, CentroidDetectionMode::TWO_LOOP);
+	vector<Point> contourK, baseK;
+	findCentroidsKeypoints(contour, contourK, CentroidDetectionMode::THREE_LOOP);
+	findCentroidsKeypoints(baseContour, baseK, CentroidDetectionMode::THREE_LOOP);
 
-	double correlation = 0;
 	
-	if (contourK.size() != baseK.size())
-		return 0;
+#ifdef DEBUG_MODE
+	Mat tempImg(Size(1920, 1080), CV_8UC3);
+	tempImg = Scalar(0);
 
-	vector<Point> c, b;
+	for (int i = 0; i < baseK.size(); i++)
+		circle(tempImg, baseK[i], 6, Scalar(0, 0, 255), -1, 8, 0);
+
 	for (int i = 0; i < contourK.size(); i++)
-	{
-		c.push_back(contourK[i].pt);
-		b.push_back(baseK[i].pt);
-	}
+		circle(tempImg, contourK[i], 3, Scalar(0, 255, 0), -1, 8, 0);
+#endif
+
+	//checkKeyPointsMatch(contourK, baseK);
 
 	
-	
-		
-	double centroidsCorrelation = spearmanCorrelation(c, b);	
+	double correlation = 0;
+			
+	double centroidsCorrelation = spearmanCorrelation(contourK, baseK);	
 	//double distancesCorrelation = singleSpearmanCorrelation(findDistancesFromCenter(c), findDistancesFromCenter(b));
-	double anglesCorrelation = singleSpearmanCorrelation(findAnglesRespectCenter(c), findAnglesRespectCenter(b));
+	//double anglesCorrelation = singleSpearmanCorrelation(findAnglesRespectCenter(c), findAnglesRespectCenter(b));
 	
 	
-	correlation += (centroidsCorrelation + anglesCorrelation) / 2;
+	//correlation += (centroidsCorrelation + distancesCorrelation + anglesCorrelation) / 3;
 
 
-	return correlation;
+	return centroidsCorrelation;
 	
 }
-
+/*
 double Utility::correlationWithBaseMatcher(std::vector<cv::Point> contour, std::vector<cv::Point> baseContour)
 {
 	vector<KeyPoint> contourK, baseK;
@@ -434,7 +549,7 @@ double Utility::correlationWithBaseMatcher(std::vector<cv::Point> contour, std::
 
 	return 0;
 }
-
+*/
 
 // COORELATION FUNCTIONS -------------------------------------------------------------------------------------------------
 
@@ -442,9 +557,12 @@ double Utility::spearmanCorrelation(std::vector<cv::Point>& distribution, std::v
 {
 	int validPoints = 0;
 
+	int size = min(distribution.size(), base.size());
+	
+	
 	// FIND MEANS
 	Point meanDistr(0, 0), meanBase(0, 0);
-	for (int i = 0; i < distribution.size(); i++)
+	for (int i = 0; i < size; i++)
 	{
 		if (distribution[i] == Point(0, 0) || base[i] == Point(0, 0))
 			continue;
@@ -469,7 +587,7 @@ double Utility::spearmanCorrelation(std::vector<cv::Point>& distribution, std::v
 	Point2d distr2 = 0;
 	Point2d base2 = 0;
 
-	for (int i = 0; i < distribution.size(); i++)
+	for (int i = 0; i < size; i++)
 	{
 		if (distribution[i] == Point(0, 0) || base[i] == Point(0, 0))
 			continue;
@@ -505,8 +623,14 @@ double Utility::pearsonCorrelation(std::vector<cv::Point>& distribution, std::ve
 		totalBase2(0,0),
 		totalDistr2(0,0);
 
+	int validPoints = 0;
+
 	for (int i = 0; i < base.size(); i++)
 	{
+		if (distribution[i] == Point(0, 0) || base[i] == Point(0, 0))
+			continue;
+		validPoints++;
+
 		totalProduct.x += distribution[i].x * base[i].x;
 		totalProduct.y += distribution[i].y * base[i].y;
 
@@ -536,12 +660,6 @@ double Utility::pearsonCorrelation(std::vector<cv::Point>& distribution, std::ve
 
 double Utility::singlePearsonCorrelation(std::vector<double>& distribution, std::vector<double>& base)
 {
-	int s;
-	if (distribution.size() > base.size())
-		s = base.size();
-	else
-		s = distribution.size();
-
 	double totalProduct = 0,
 		totalBase = 0,
 		totalDistr = 0,
@@ -550,6 +668,9 @@ double Utility::singlePearsonCorrelation(std::vector<double>& distribution, std:
 
 	for (int i = 0; i < base.size(); i++)
 	{
+		if (distribution[i] == 0 || base[i] == 0)
+			continue;
+
 		totalProduct += distribution[i] * base[i];
 		
 		totalBase += base[i];		
@@ -625,28 +746,30 @@ double Utility::singlePearsonCorrelation(std::vector<double>& distribution, std:
 double Utility::singleSpearmanCorrelation(std::vector<double>& distribution, std::vector<double>& base)
 {
 	
-	int s;
-	if (distribution.size() > base.size())
-	s = base.size();
-	else
-	s = distribution.size();
-
 	double totalProduct = 0,
 	totalBase = 0,
 	totalDistr = 0,
 	totalBase2 = 0,
 	totalDistr2 = 0;	
 
+	int size = min(distribution.size(), base.size());
+	int validPoints = 0;
+
 	// FIND MEANS
 	double meanDistr = 0, meanBase = 0;
-	for (int i = 0; i < s; i++)
+	for (int i = 0; i <size; i++)
 	{
+		if (distribution[i] == 0 || base[i] == 0 || distribution[i] == numeric_limits<double>::max() || base[i] == numeric_limits<double>::max())
+			continue;
+
+		validPoints++;
+
 		meanDistr += distribution[i];
 		meanBase += base[i];
 	}
 
-	meanDistr /= distribution.size();
-	meanBase /= base.size();
+	meanDistr /= validPoints;
+	meanBase /= validPoints;
 
 
 	double diffDistr, diffBase;
@@ -655,17 +778,20 @@ double Utility::singleSpearmanCorrelation(std::vector<double>& distribution, std
 	double distr2 = 0;
 	double base2 = 0;
 
-	for (int i = 0; i < distribution.size(); i++)
+	for (int i = 0; i < size; i++)
 	{
-	diffDistr = distribution[i] - meanDistr;
 
-	diffBase = base[i] - meanBase;
+		if (distribution[i] == 0 || base[i] == 0 || distribution[i] == numeric_limits<double>::max() || base[i] == numeric_limits<double>::max())
+			continue;
+		diffDistr = distribution[i] - meanDistr;
 
-	product += diffDistr * diffBase;
+		diffBase = base[i] - meanBase;
 
-	distr2 += diffDistr * diffDistr;
+		product += diffDistr * diffBase;
 
-	base2 += diffBase * diffBase;
+		distr2 += diffDistr * diffDistr;
+
+		base2 += diffBase * diffBase;
 	}
 
 	double correlation;
@@ -728,26 +854,7 @@ double Utility::calculateHausdorffDistance( std::vector<cv::Point> contour, std:
 	return max(maxDistBC, maxDistCB);
 }
 
-// -----------------------------------------------------------------------------------------------------------------------
 
-/*std::vector<cv::Point> Utility::normalize(std::vector<cv::Point> source)
-{
-	vector<Point> norm;
-
-	Rect bound = boundingRect(source);
-	int minX = bound.x;
-	int minY = bound.y;
-	
-
-	for (int i = 0; i < source.size(); i++)
-	{
-		norm.push_back(source[i]);
-		norm[i].x = ((source[i].x - minX) * 4000 / bound.width)+2;
-		norm[i].y = ((source[i].y - minY) * 4000 / bound.height)+2;
-	}
-
-	return norm;
-}*/
 
 // FEATURE DETECTION FUNCTIONS ---------------------------------------------------------------------------------------------
 
@@ -1091,7 +1198,7 @@ std::vector<cv::Point> Utility::findLargeCentroidsDistribution(std::vector<cv::P
 }
 
 void Utility::findCentroidsKeypoints(std::vector<cv::Point> contour,
-													std::vector<cv::KeyPoint>& centroids,													
+													std::vector<cv::Point>& centroids,													
 													CentroidDetectionMode mode)
 {
 	Rect box = boundingRect(contour);
@@ -1122,32 +1229,18 @@ void Utility::findCentroidsKeypoints(std::vector<cv::Point> contour,
 
 	circle(img, center, 3, Scalar(255), -1, 8, 0);
 
-	centroids.push_back(KeyPoint(center, 1));
+	centroids.push_back(center);
 
 	
 	// SPLIT ======================= = LEVEL 1 = ===============================
 
-	int x = box.x;
-	int y = box.y;
-	int h = box.height;
-	int w = box.width;
+	vector<Rect> split = splitRect(box, center, 1, SplitMode::MODE_2);
 
-	Rect leftSplit(x, y, cx - x, h);
-	Rect rigthSplit(cx, y, w, h);
-	Rect topSplit(x, y, w, cy - y);
-	Rect bottomSplit(x, cy, w, h);
-
-	vector<Rect> splitRect;
-	splitRect.push_back(leftSplit);
-	splitRect.push_back(rigthSplit);
-	splitRect.push_back(topSplit);
-	splitRect.push_back(bottomSplit);
-
-	for (int i = 0; i < splitRect.size(); i++)
+	for (int i = 0; i < split.size(); i++)
 	{
 		img = Scalar(0);
 		drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
-		Mat sub = img(splitRect[i]);
+		Mat sub = img(split[i]);
 
 		int dilation_size = 1;
 		Mat element = getStructuringElement(0, Size(2 * dilation_size, 2 * dilation_size), Point(dilation_size, dilation_size));
@@ -1155,60 +1248,48 @@ void Utility::findCentroidsKeypoints(std::vector<cv::Point> contour,
 
 		vector<vector<Point>> shape;
 		findContours(sub, shape, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
-
-		if (shape.size() != 0) // FIRST LEVEL LOOP
+		
+		int cx_1, cy_1;
+		
+		if (shape.size() == 1)
 		{
-			int cx_1, cy_1;
+			// center of the contour
+			Moments m = moments(shape[0], true);
+			cx_1 = int(m.m10 / m.m00) + split[i].x;
+			cy_1 = int(m.m01 / m.m00) + split[i].y;
+		}
+		else
+		{
+			// center of the sub image
+			Moments m = moments(sub, true);
+			cx_1 = int(m.m10 / m.m00) + split[i].x;
+			cy_1 = int(m.m01 / m.m00) + split[i].y;
+		}
 
-			if (shape.size() == 1)
-			{
-				// center of the contour
-				Moments m = moments(shape[0], true);
-				cx_1 = int(m.m10 / m.m00) + splitRect[i].x;
-				cy_1 = int(m.m01 / m.m00) + splitRect[i].y;
-			}
-			else
-			{
-				// center of the sub image
-				Moments m = moments(sub, true);
-				cx_1 = int(m.m10 / m.m00) + splitRect[i].x;
-				cy_1 = int(m.m01 / m.m00) + splitRect[i].y;
-			}
+		Point2f center(cx_1, cy_1);
 
-			Point2f center(cx_1, cy_1);
-
-			//Size size(box.x + box.width + cx, box.y + box.height + cy);
-			//Mat img(size, CV_8UC1);
-			//img = Scalar(0);
-			//drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
+		//Size size(box.x + box.width + cx, box.y + box.height + cy);
+		//Mat img(size, CV_8UC1);
+		//img = Scalar(0);
+		//drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
 
 
-			circle(img, center, 6, Scalar(255), -1, 8, 0);
-			centroids.push_back(KeyPoint(center, 2));
+		circle(img, center, 6, Scalar(255), -1, 8, 0);
+		
+		if(shape.size() != 0 && cx_1 > 0 && cy_1 > 0)
+			centroids.push_back(center);
+		else
+			centroids.push_back(Point2f(0,0));
 
+
+		if (cx_1 > 0 && cy_1 > 0)
+		{
 			if (mode != CentroidDetectionMode::ONE_LOOP)
 			{
 				// SPLIT ========================== = LEVEL 2 = ===============================
 
-				int x = splitRect[i].x;
-				int y = splitRect[i].y;
-				int h = splitRect[i].height;
-				int w = splitRect[i].width;
-				
+				vector<Rect> splitRect_1 = splitRect(split[i], center, 2, SplitMode::MODE_2);
 
-				Rect leftSplit_1(x, y, cx_1 - x, h);
-				
-				Rect rigthSplit_1(cx_1, y, (w + x) - cx_1, h);
-
-				Rect topSplit_1(x, y, w, cy_1 - y);
-		
-				Rect bottomSplit_1(x, cy_1, w, (h + y) - cy_1);	
-
-				vector<Rect> splitRect_1;
-				splitRect_1.push_back(leftSplit_1);
-				splitRect_1.push_back(rigthSplit_1);
-				splitRect_1.push_back(topSplit_1);
-				splitRect_1.push_back(bottomSplit_1);
 
 				for (int j = 0; j < splitRect_1.size(); j++)
 				{
@@ -1223,58 +1304,47 @@ void Utility::findCentroidsKeypoints(std::vector<cv::Point> contour,
 					vector<vector<Point>> shape_1;
 					findContours(sub, shape_1, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 
-					if (shape_1.size() != 0) // SECOND LEVEL LOOP
+					int cx_2, cy_2;
+
+					if (shape_1.size() == 1)
 					{
-						int cx_2, cy_2;
+						// center of the contour
+						Moments m = moments(shape_1[0], true);
+						cx_2 = int(m.m10 / m.m00) + splitRect_1[j].x;
+						cy_2 = int(m.m01 / m.m00) + splitRect_1[j].y;
+					}
+					else
+					{
+						// center of the sub image
+						Moments m = moments(sub, true);
+						cx_2 = int(m.m10 / m.m00) + splitRect_1[j].x;
+						cy_2 = int(m.m01 / m.m00) + splitRect_1[j].y;
 
-						if (shape_1.size() == 1)
-						{
-							// center of the contour
-							Moments m = moments(shape_1[0], true);
-							cx_2 = int(m.m10 / m.m00) + splitRect_1[j].x;
-							cy_2 = int(m.m01 / m.m00) + splitRect_1[j].y;
-						}
-						else
-						{
-							// center of the sub image
-							Moments m = moments(sub, true);
-							cx_2 = int(m.m10 / m.m00) + splitRect_1[j].x;
-							cy_2 = int(m.m01 / m.m00) + splitRect_1[j].y;
-
-						}
-						
-
-						Point2f center(cx_2, cy_2);
+					}
 
 
-						//Size size(box.x + box.width + cx, box.y + box.height + cy);
-						//Mat img(size, CV_8UC1);
-						//img = Scalar(0);
-						//drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
+					Point2f center(cx_2, cy_2);
 
 
-						circle(img, center, 9, Scalar(255), -1, 8, 0);
-						centroids.push_back(KeyPoint(center, 3));
+					//Size size(box.x + box.width + cx, box.y + box.height + cy);
+					//Mat img(size, CV_8UC1);
+					//img = Scalar(0);
+					//drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
 
-						/*
+
+					circle(img, center, 9, Scalar(255), -1, 8, 0);
+
+					if (shape_1.size() != 0 && cx_2 > 0 && cy_2 > 0)
+						centroids.push_back(center);
+					else
+						centroids.push_back(Point2f(0, 0));
+
+
+					if (cx_2 > 0 && cy_2 > 0)
+					{
 						if (mode == CentroidDetectionMode::THREE_LOOP) // SPLIT ========================== = LEVEL 3 = ===============================
 						{
-							int x = splitRect_1[j].x;
-							int y = splitRect_1[j].y;
-							int h = splitRect_1[j].height;
-							int w = splitRect_1[j].width;
-
-
-							Rect leftSplit_2(x, y, cx - x, h);
-							Rect rigthSplit_2(cx, y, w, h);
-							Rect topSplit_2(x, y, w, cy - y);
-							Rect bottomSplit_2(x, cy, w, h);
-
-							vector<Rect> splitRect_2;
-							splitRect_2.push_back(leftSplit_2);
-							splitRect_2.push_back(rigthSplit_2);
-							splitRect_2.push_back(topSplit_2);
-							splitRect_2.push_back(bottomSplit_2);
+							vector<Rect> splitRect_2 = splitRect(splitRect_1[j], center, 3, SplitMode::MODE_2);
 
 							for (int k = 0; k < splitRect_2.size(); k++)
 							{
@@ -1288,39 +1358,68 @@ void Utility::findCentroidsKeypoints(std::vector<cv::Point> contour,
 
 								vector<vector<Point>> shape_2;
 								findContours(sub, shape_2, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
+								int cx_3, cy_3;
 
 								if (shape_2.size() == 1) // THIRD LEVEL LOOP
 								{
 									// center of the contour
 									Moments m = moments(shape_2[0], true);
-									int cx = int(m.m10 / m.m00) + splitRect_2[j].x;
-									int cy = int(m.m01 / m.m00) + splitRect_2[j].y;
-									Point2f center(cx, cy);
-
-
-									//Size size(box.x + box.width + cx, box.y + box.height + cy);
-									//Mat img(size, CV_8UC1);
-									//img = Scalar(0);
-									//drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
-
-
-									circle(img, center, 9, Scalar(255), -1, 8, 0);
-									centroids.push_back(KeyPoint(center, 3));
+									cx_3 = int(m.m10 / m.m00) + splitRect_2[k].x;
+									cy_3 = int(m.m01 / m.m00) + splitRect_2[k].y;
 
 								}
+								else
+								{
+									// center of the image
+									Moments m = moments(sub, true);
+									cx_3 = int(m.m10 / m.m00) + splitRect_2[k].x;
+									cy_3 = int(m.m01 / m.m00) + splitRect_2[k].y;
+								}
+
+								Point2f center(cx_3, cy_3);
+
+
+								//Size size(box.x + box.width + cx, box.y + box.height + cy);
+								//Mat img(size, CV_8UC1);
+								//img = Scalar(0);
+								//drawContours(img, tempVector, -1, cv::Scalar(255), 1, CV_AA);
+
+
+								circle(img, center, 9, Scalar(255), -1, 8, 0);
+
+								if (shape_2.size() != 0 && cx_3 > 0 && cy_3 > 0)
+									centroids.push_back(center);
+								else
+									centroids.push_back(Point2f(0, 0));
+
 
 							}
 
-						}//  ========================== = LEVEL 3 = ===============================					
-						*/
+						}//  ========================== = LEVEL 3 = ===============================	
+
 					}
+					else
+					{
+						for (int i = 0; i < 4; i++)
+						{
+							centroids.push_back(Point2f(0, 0));
+						}
+					}
+
 
 				}
 
-			}// ========================== = LEVEL 2 = ===============================			
-
+			}// ========================== = LEVEL 2 = ===============================	
 		}
-
+		else
+		{
+			int loop = (mode == TWO_LOOP) ? 4 : 16;
+			
+			for (int i = 0; i < loop; i++)
+			{
+				centroids.push_back(Point2f(0, 0));
+			}
+		}
 	}
 }
 
@@ -1336,7 +1435,10 @@ std::vector<double> Utility::findDistancesFromCenter(std::vector<cv::Point> dist
 	for (int i = 0; i < distribution.size(); i++)
 	{
 		if (distribution[i] == Point(0, 0))
+		{
+			distances.push_back(0);
 			continue;
+		}
 
 		double cat1 = (distribution[i].x - center.x);
 		double cat2 = (distribution[i].y - center.y);
@@ -1357,7 +1459,10 @@ std::vector<double> Utility::findAnglesRespectCenter(std::vector<cv::Point> dist
 	for (int i = 0; i < distribution.size(); i++)
 	{
 		if (distribution[i] == Point(0, 0))
+		{
+			angles.push_back(numeric_limits<double>::max());
 			continue;
+		}
 
 		double cat1 = (distribution[i].x - center.x);
 		double cat2 = (distribution[i].y - center.y);
@@ -1401,10 +1506,10 @@ double Utility::checkKeyPointsMatch(std::vector<cv::KeyPoint> &contour, std::vec
 	for (int i = 0; i < baseK.size(); i++)
 		circle(tempImg, baseK[i], 6, Scalar(0, 0, 255), -1, 8, 0);
 
-	for (int i = 0; i < contourKT.size(); i++)
+	for (int i = 0; i < contourK.size(); i++)
 	{
-		circle(tempImg, contourKT[i], 6, Scalar(0, 255, 0), -1, 8, 0);
-		circle(tempImg, contourK[i], 6, Scalar(0, 255, 0), -1, 8, 0);
+		circle(tempImg, contourKT[i], 3, Scalar(0, 255, 0), -1, 8, 0);
+		circle(tempImg, contourK[i], 3, Scalar(0, 255, 0), -1, 8, 0);
 	}
 #endif
 
