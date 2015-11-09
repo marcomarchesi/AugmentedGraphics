@@ -403,11 +403,11 @@ double Utility::correlationWithBase(std::vector<cv::Point> contourKeypoints, std
 	Mat tempImg(Size(1920, 1920), CV_8UC3);
 	tempImg = Scalar(0);
 
-	for (int i = 0; i < baseK.size(); i++)
-		circle(tempImg, baseK[i], 6, Scalar(0, 0, 255), -1, 8, 0);
+	for (int i = 0; i < baseKeypoints.size(); i++)
+		circle(tempImg, baseKeypoints[i], 6, Scalar(0, 0, 255), -1, 8, 0);
 
-	for (int i = 0; i < contourK.size(); i++)
-		circle(tempImg, contourK[i], 3, Scalar(0, 255, 0), -1, 8, 0);
+	for (int i = 0; i < contourKeypoints.size(); i++)
+		circle(tempImg, contourKeypoints[i], 3, Scalar(0, 255, 0), -1, 8, 0);
 #endif
 
 		

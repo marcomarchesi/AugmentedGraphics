@@ -16,8 +16,9 @@ namespace od
 			cv::Mat image,
 			bool performOpening);
 
-		std::vector<std::vector<std::vector<cv::Point>>> processContours(
+		void processContours(
 			std::vector<std::vector<std::vector<cv::Point>>> approxContours,
+			std::vector<std::vector<std::vector<cv::Point>>> &detectedObjects,
 			double hammingThreshold,
 			double correlationThreshold,
 			int* numberOfObject);

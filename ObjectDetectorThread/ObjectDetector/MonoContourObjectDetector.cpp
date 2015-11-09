@@ -191,14 +191,16 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 }
 
 
-std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::processContours(
+void MonoContourObjectDetector::processContours(
 	std::vector<std::vector<std::vector<cv::Point>>> approxContours,
+	std::vector<std::vector<std::vector<cv::Point>>> &detectedObjects,
 	double hammingThreshold,
 	double correlationThreshold,
 	int* numberOfObject)
 {
 
 	vector<vector<Point>> objects;
+	detectedObjects.clear();
 	
 	double attenuation = 0;
 
@@ -223,6 +225,7 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 
 		vector<Point> contourKeypoints;
 		Utility::findCentroidsKeypoints(approxContours[0][i], contourKeypoints, Utility::CentroidDetectionMode::THREE_LOOP);
+
 		double correlation = Utility::correlationWithBase(contourKeypoints, _baseKeypoints);
 
 	
@@ -244,10 +247,10 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 
 	*numberOfObject = (objects.size());
 	
-	vector<vector<vector<Point>>> retVector;
-	retVector.push_back(objects);
+	//vector<vector<vector<Point>>> retVector;
+	//retVector.push_back(objects);
 
-	return retVector;
+	detectedObjects.push_back(objects);
 }
 
 
