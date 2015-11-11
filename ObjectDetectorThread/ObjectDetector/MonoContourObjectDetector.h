@@ -16,9 +16,12 @@ namespace od
 			cv::Mat image,
 			bool performOpening);
 
-		void processContours(
+		void getValidContours(std::vector<cv::Point> contours,
+			boost::container::vector<boost::container::vector<boost::container::vector<cv::Point>>> *threadVector,
+			int minContourPoints);
+
+		std::vector<std::vector<std::vector<cv::Point>>> processContours(
 			std::vector<std::vector<std::vector<cv::Point>>> approxContours,
-			std::vector<std::vector<std::vector<cv::Point>>> &detectedObjects,
 			double hammingThreshold,
 			double correlationThreshold,
 			int* numberOfObject);

@@ -33,6 +33,9 @@
     <ClCompile Include="ObjectDetector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CategoryTester.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MonoContourObjectDetector.h">
@@ -51,6 +54,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="commonInclude.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CategoryTester.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InterCategoryTester.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IntraCategoryTester.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CategoryTesterFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

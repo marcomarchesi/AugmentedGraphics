@@ -263,9 +263,8 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 	return lookupVector;
 }
 
-void MultiContourObjectDetector::processContours(
+std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::processContours(
 	std::vector<std::vector<std::vector<cv::Point>>> approxContours,
-	std::vector<std::vector<std::vector<cv::Point>>> &detectedObjects,
 	double hammingThreshold,
 	double correlationThreshold,
 	int* numberOfObject)
@@ -345,11 +344,11 @@ void MultiContourObjectDetector::processContours(
 		cout << "Middle Hamming distance" << to_string(i) << " with base ---> " << totHamming << endl;
 
 		if (totCorrelation >= correlationThreshold && totHamming >= hammingThreshold)
-			detectedObjects.push_back(approxContours[i]);
+			objects.push_back(approxContours[i]);
 	}
 
-	*numberOfObject = detectedObjects.size();
+	*numberOfObject = objects.size();
 
-	//return objects;
+	return objects;
 }
 

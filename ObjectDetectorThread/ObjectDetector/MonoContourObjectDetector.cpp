@@ -3,6 +3,8 @@
 #include "MonoContourObjectDetector.h"
 
 
+
+
 using namespace std;
 using namespace cv;
 using namespace od;
@@ -102,22 +104,33 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 	threshold(gray, thresh, minThreshold, 255, THRESH_BINARY);
 
+
+	Mat roi = thresh(_deleteRect);
+
 	vector<vector<Point>> contours;
 	vector<Point> approx, hull;
-	findContours(thresh, contours, CV_RETR_LIST, CHAIN_APPROX_NONE);
+	findContours(roi, contours, CV_RETR_LIST, CHAIN_APPROX_NONE);
 
 #ifdef DEBUG_MODE
-	Mat contoursImage(image.size(), CV_8UC1);
+	Mat contoursImage(roi.size(), CV_8UC1);
 	contoursImage = cv::Scalar(0);
 	drawContours(contoursImage, contours, -1, cv::Scalar(255), 1, CV_AA);
 	imshow("ContoursImage", contoursImage);
 #endif
 
-	vector<vector<Point>> approxContours, originalQueryShapes;
+	vector<vector<Point>>tempQueryShapes;
+	vector<vector<vector<Point>>> retVector;
+
+	boost::thread_group threadGroup;
+	
+	boost::container::vector<boost::container::vector<boost::container::vector<cv::Point>>> threadVector;
+
+	boost::container::vector<boost::container::vector<cv::Point>> originalQueryShapes;
+	threadVector.push_back(originalQueryShapes);
 
 	for (int i = 0; i < contours.size(); i++)
 	{
-
+		/*
 		if (contours[i].size() < _minContourPoints)
 			continue;
 
@@ -126,44 +139,39 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 		double epsilon = contours[i].size() * 0.003;
 		approxPolyDP(contours[i], approx, epsilon, true);
 
-#ifdef DEBUG_MODE			
-		contoursImage = Scalar(0);
-		vector<vector<Point>> temp;
-		temp.push_back(hull);
-		drawContours(contoursImage, temp, -1, cv::Scalar(255), 1, CV_AA);
-#endif
 
-		// REMOVE TOO EXTERNAL SHAPES -------------
-
-		Moments m = moments(hull, true);
-		int cx = int(m.m10 / m.m00);
-		int cy = int(m.m01 / m.m00);
-
-		Point c(cx, cy);
-
-		if (!(c.x >= _deleteRect.x && 
-			c.y >= _deleteRect.y &&
-			c.x <= (_deleteRect.x + _deleteRect.width) &&
-			c.y <= (_deleteRect.y + _deleteRect.height)))
-			continue;
-
-		Rect bounding = boundingRect(contours[i]);
-
-#ifdef DEBUG_MODE
-		rectangle(contoursImage, _deleteRect, Scalar(255));
-		rectangle(contoursImage, bounding, Scalar(255));
-#endif
+		// REMOVE TOO EXTERNAL SHAPES -------- PERFORM ROI -----
 		
-
-		bool isInternal = bounding.x > _deleteRect.x &&
-			bounding.y > _deleteRect.y &&
-			bounding.x + bounding.width < _deleteRect.x + _deleteRect.width &&
-			bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;	
-
-
-		if (!isInternal)
-			continue;
-
+//		Moments m = moments(hull, true);
+//		int cx = int(m.m10 / m.m00);
+//		int cy = int(m.m01 / m.m00);
+//
+//		Point c(cx, cy);
+//
+//		if (!(c.x >= _deleteRect.x && 
+//			c.y >= _deleteRect.y &&
+//			c.x <= (_deleteRect.x + _deleteRect.width) &&
+//			c.y <= (_deleteRect.y + _deleteRect.height)))
+//			continue;
+//		
+//
+//		Rect bounding = boundingRect(contours[i]);
+//
+//#ifdef DEBUG_MODE
+//		rectangle(contoursImage, _deleteRect, Scalar(255));
+//		rectangle(contoursImage, bounding, Scalar(255));
+//#endif
+//		
+//
+//		bool isInternal = bounding.x > _deleteRect.x &&
+//			bounding.y > _deleteRect.y &&
+//			bounding.x + bounding.width < _deleteRect.x + _deleteRect.width &&
+//			bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;	
+//
+//
+//		if (!isInternal)
+//			continue;
+		
 		// --------------------------------------------------
 
 		int min, max;
@@ -176,31 +184,124 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 			approxContours.push_back(hull);
 			originalQueryShapes.push_back(approx);
 		}
+		*/
+
+		boost::thread filterThread;
+		
+		filterThread = boost::thread(&od::MonoContourObjectDetector::getValidContours,
+											this,
+											contours[i],
+											&threadVector,
+											_minContourPoints);
+
+		threadGroup.add_thread(&filterThread);
 	}
+	threadGroup.join_all();
+
+
+	for (int i = 0; i < threadVector[0].size(); i++)
+	{
+		vector<Point> temp1;
+		for (int j = 0; j < threadVector[0][i].size(); j++)
+		{
+			temp1.push_back(threadVector[0][i][j]);
+		}
+		tempQueryShapes.push_back(temp1);		
+	}
+	retVector.push_back(tempQueryShapes);
+
 
 #ifdef DEBUG_MODE			
 	contoursImage = Scalar(0);
-	drawContours(contoursImage, approxContours, -1, cv::Scalar(255), 1, CV_AA);
+	drawContours(contoursImage, retVector, -1, cv::Scalar(255), 1, CV_AA);
 	imshow("ApproxContours", contoursImage);
 #endif
 
-	vector<vector<vector<Point>>> retVector;
-	retVector.push_back(originalQueryShapes);
+	
+	
 
 	return retVector;
 }
 
 
-void MonoContourObjectDetector::processContours(
+void MonoContourObjectDetector::getValidContours(std::vector<cv::Point> contours,
+	boost::container::vector<boost::container::vector<boost::container::vector<cv::Point>>> *threadVector,
+	int minContourPoints)
+{
+	(*threadVector)[0].clear();
+
+	vector<Point> approx, hull;
+	//vector<vector<Point>> originalQueryShapes;
+
+	if (contours.size() < minContourPoints)
+		return;
+
+	convexHull(contours, hull, false);
+
+	double epsilon = contours.size() * 0.003;
+	approxPolyDP(contours, approx, epsilon, true);
+
+
+	// REMOVE TOO EXTERNAL SHAPES -------- PERFORM ROI -----
+
+	//		Moments m = moments(hull, true);
+	//		int cx = int(m.m10 / m.m00);
+	//		int cy = int(m.m01 / m.m00);
+	//
+	//		Point c(cx, cy);
+	//
+	//		if (!(c.x >= _deleteRect.x && 
+	//			c.y >= _deleteRect.y &&
+	//			c.x <= (_deleteRect.x + _deleteRect.width) &&
+	//			c.y <= (_deleteRect.y + _deleteRect.height)))
+	//			continue;
+	//		
+	//
+	//		Rect bounding = boundingRect(contours[i]);
+	//
+	//#ifdef DEBUG_MODE
+	//		rectangle(contoursImage, _deleteRect, Scalar(255));
+	//		rectangle(contoursImage, bounding, Scalar(255));
+	//#endif
+	//		
+	//
+	//		bool isInternal = bounding.x > _deleteRect.x &&
+	//			bounding.y > _deleteRect.y &&
+	//			bounding.x + bounding.width < _deleteRect.x + _deleteRect.width &&
+	//			bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;	
+	//
+	//
+	//		if (!isInternal)
+	//			continue;
+
+	// --------------------------------------------------
+
+	int min, max;
+	min = minContourPoints - minContourPoints / 2.4;
+	max = minContourPoints + minContourPoints / 2.4;
+
+
+	if (hull.size() >= min && hull.size() <= max)
+	{
+		boost::container::vector<Point> boostApprox;
+		for (int i = 0; i < approx.size(); i++)
+			boostApprox.push_back(approx[i]);
+
+		(*threadVector)[0].push_back(boostApprox);
+	}
+	
+	return;
+}
+
+std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::processContours(
 	std::vector<std::vector<std::vector<cv::Point>>> approxContours,
-	std::vector<std::vector<std::vector<cv::Point>>> &detectedObjects,
 	double hammingThreshold,
 	double correlationThreshold,
 	int* numberOfObject)
 {
 
 	vector<vector<Point>> objects;
-	detectedObjects.clear();
+	
 	
 	double attenuation = 0;
 
@@ -247,10 +348,10 @@ void MonoContourObjectDetector::processContours(
 
 	*numberOfObject = (objects.size());
 	
-	//vector<vector<vector<Point>>> retVector;
-	//retVector.push_back(objects);
+	vector<vector<vector<Point>>> retVector;
+	retVector.push_back(objects);
 
-	detectedObjects.push_back(objects);
+	return retVector;
 }
 
 

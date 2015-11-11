@@ -20,7 +20,7 @@ namespace od
 			PRECISE
 		};
 
-		ObjectDetector(int minContourPoints, int aspectedContours);
+		ObjectDetector(int aspectedContours);
 
 		cv::Mat findObjectsInImage(cv::Mat& image,
 			double hammingThreshold,
@@ -37,7 +37,8 @@ namespace od
 
 		virtual std::vector<std::vector<std::vector<cv::Point>>> findApproxContours(
 			cv::Mat image,
-			bool performOpening) = 0;
+			bool performOpening,
+			bool findBaseShape) = 0;
 
 		virtual std::vector<std::vector<std::vector<cv::Point>>> processContours(
 			std::vector<std::vector<std::vector<cv::Point>>> approxContours,
@@ -52,8 +53,10 @@ namespace od
 
 	protected:
 		cv::Size _baseSize;
-		const int _minContourPoints;
+
+		int _minContourPoints;
 		const int _aspectedContours;
+
 		const double _deleteFocus;
 		const double _attenuationFocus;
 		cv::Rect _deleteRect;

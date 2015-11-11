@@ -10,7 +10,7 @@ using namespace od;
 ObjectDetector::ObjectDetector(int minContourPoints, int aspectedContours):
 	_minContourPoints(minContourPoints),
 	_aspectedContours(aspectedContours),
-	_deleteFocus(0.85),
+	_deleteFocus(0.75),
 	_attenuationFocus(0.40)
 {}
 
@@ -35,16 +35,15 @@ cv::Mat ObjectDetector::findObjectsInImage(cv::Mat& image,
 {
 	vector<vector<vector<Point>>> approxContours = findApproxContours(image, true); //prima 60
 	
-	vector<vector<vector<Point>>> detectedObjects;
-	processContours(approxContours, detectedObjects, hammingThreshold, correlationThreshold, numberOfObject);
+	//vector<vector<vector<Point>>> detectedObjects =	processContours(approxContours, hammingThreshold, correlationThreshold, numberOfObject);
 
 	cvtColor(image, image, CV_BGR2BGRA);
-	Mat mask = generateDetectionMask(detectedObjects, image, maskMode);	
+	//Mat mask = generateDetectionMask(detectedObjects, image, maskMode);	
 
-	*detectedContours = detectedObjects;
+	//*detectedContours = detectedObjects;
 
 	Mat alpha(image.size(), CV_8UC4);
-	bitwise_and(image, mask, alpha);
+	//bitwise_and(image, mask, alpha);
 
 	return alpha;
 }

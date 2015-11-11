@@ -6,7 +6,7 @@ namespace od
 
 	public:
 
-		MonoContourObjectDetector(int minContourPoints, int aspectedContours);
+		MonoContourObjectDetector(int aspectedContours);
 
 	private:
 
@@ -14,7 +14,8 @@ namespace od
 
 		std::vector<std::vector<std::vector<cv::Point>>> findApproxContours(
 			cv::Mat image,
-			bool performOpening);
+			bool performOpening,
+			bool findBaseShape);
 
 		std::vector<std::vector<std::vector<cv::Point>>> processContours(
 			std::vector<std::vector<std::vector<cv::Point>>> approxContours,

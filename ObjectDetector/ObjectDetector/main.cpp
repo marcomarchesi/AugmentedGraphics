@@ -1,15 +1,95 @@
 #include "ObjectDetectorFactory.h"
 #include <time.h>
+#include <windows.h>
+#include <tchar.h> 
+#include <stdio.h>
+#include <strsafe.h>
+
 
 using namespace cv;
 using namespace std;
 using namespace od;
 
+String loadRandomImage(char* dir)
+{
+	TCHAR szDir[MAX_PATH];
+	WIN32_FIND_DATA ffd;
+	HANDLE hFind = INVALID_HANDLE_VALUE;
+
+	srand(time(NULL));
+	int dirNum = rand() % 81;
+
+	StringCchCopy(szDir, MAX_PATH, dir);
+	StringCchCat(szDir, MAX_PATH, TEXT("\\*"));
+
+	hFind = FindFirstFile(szDir, &ffd);
+	
+	int d = 0;
+	while (d < dirNum && FindNextFile(hFind, &ffd) != 0)
+		d++;
+
+	FindNextFile(hFind, &ffd);
+	if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+	{
+		FindClose(hFind);
+		HANDLE hFindSub = INVALID_HANDLE_VALUE;
+		WIN32_FIND_DATA subffd;
+
+		StringCchCopy(szDir, MAX_PATH, dir);
+		StringCchCat(szDir, MAX_PATH, TEXT("\\"));
+		StringCchCat(szDir, MAX_PATH, ffd.cFileName);
+		StringCchCat(szDir, MAX_PATH, TEXT("\\*"));
+
+		int fileNum = rand() % 15;
+
+		hFindSub = FindFirstFile(szDir, &subffd);
+
+		int f = 0;
+		while (f < fileNum && FindNextFile(hFindSub, &subffd) != 0)
+			f++;
+
+		FindNextFile(hFindSub, &subffd);
+
+		StringCchCopy(szDir, MAX_PATH, dir);
+		StringCchCat(szDir, MAX_PATH, TEXT("\\"));
+		StringCchCat(szDir, MAX_PATH, ffd.cFileName);
+		StringCchCat(szDir, MAX_PATH, TEXT("\\"));
+		StringCchCat(szDir, MAX_PATH, subffd.cFileName);
+
+		return szDir;
+	}
+	else
+		return NULL;
+
+
+}
+
+
 int main(int, char)
 {
-	Mat baseImage = imread("mecha2.jpg");
 
-	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(52, 1);
+	String filename;
+	Mat baseImage;
+
+	namedWindow("change image (SPACE) continue (a)", 1);
+	for (;;)
+	{
+		filename = loadRandomImage("C:\\Users\\Notebook\\Desktop\\TESI\\GITHUB\\101_subset");
+
+		if (filename.c_str() == NULL)
+			exit(1);
+
+		baseImage = imread(filename);
+		
+		imshow("change image (SPACE) continue (a)", baseImage);
+
+		int c = waitKey(0);
+		if (c == 'a')
+			break;
+	}
+	
+
+	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(1);
 	if(!detector->loadImage(baseImage))
 		exit(1);
 
@@ -87,7 +167,7 @@ int main(int, char)
 		//waitKey(0);
 		cap >> image;
 		
-		
+		/*
 		if (image.size().height > 800 || image.size().width > 800)
 		{
 			Size s = image.size(), small;
@@ -95,9 +175,10 @@ int main(int, char)
 			small.width = s.width / 3;
 
 			resize(image, image, small);
-		}
-		imshow("Source", image);
+		}*/
 
+		imshow("Source", image);
+		
 		
 		vector<vector<vector<Point>>> objects;
 		int numberOfObjects = 0;

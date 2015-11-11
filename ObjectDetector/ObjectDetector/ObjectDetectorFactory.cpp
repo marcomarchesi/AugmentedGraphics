@@ -7,13 +7,13 @@
 using namespace std;
 using namespace od;
 
-ObjectDetector* ObjectDetectorFactory::getObjectDetector(int minContourPoints, int contoursNumber)
+ObjectDetector* ObjectDetectorFactory::getObjectDetector(int contoursNumber)
 {
 	if (contoursNumber == 1)
-		return (ObjectDetector*)new MonoContourObjectDetector(minContourPoints, contoursNumber);
+		return (ObjectDetector*)new MonoContourObjectDetector(contoursNumber);
 
 	else if (contoursNumber > 1)
-		return (ObjectDetector*)new MultiContourObjectDetector(minContourPoints, contoursNumber);
+		return (ObjectDetector*)new MultiContourObjectDetector(contoursNumber);
 
 	else
 	{

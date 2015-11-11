@@ -7,8 +7,7 @@ using namespace std;
 using namespace cv;
 using namespace od;
 
-ObjectDetector::ObjectDetector(int minContourPoints, int aspectedContours):
-	_minContourPoints(minContourPoints),
+ObjectDetector::ObjectDetector(int aspectedContours):
 	_aspectedContours(aspectedContours),
 	_deleteFocus(0.85),
 	_attenuationFocus(0.40)
@@ -22,7 +21,26 @@ bool ObjectDetector::loadImage(cv::Mat& baseImage)
 		cerr << "The base image is empty";
 		return false;
 	}
-	return findBaseShape(baseImage);
+
+	bool found = findBaseShape(baseImage);
+
+	if (found)
+	{
+		if (baseImage.size().height > 600 || baseImage.size().width > 600)
+		{
+			Size s = baseImage.size(), small;
+			small.height = s.height / 5;
+			small.width = s.width / 5;
+
+			resize(baseImage, baseImage, small);
+		}
+		namedWindow("FIND THIS", 1);
+		imshow("FIND THIS", baseImage);
+
+
+	}
+
+	return found; 
 }
 
 
@@ -33,7 +51,7 @@ cv::Mat ObjectDetector::findObjectsInImage(cv::Mat& image,
 											std::vector<std::vector<std::vector<cv::Point>>>* detectedContours,
 											int* numberOfObject)
 {
-	vector<vector<vector<Point>>> approxContours = findApproxContours(image, true); //prima 60
+	vector<vector<vector<Point>>> approxContours = findApproxContours(image, true, false); //prima 60
 	
 	vector<vector<vector<Point>>> detectedObjects = processContours(approxContours, hammingThreshold, correlationThreshold, numberOfObject);
 

@@ -77,5 +77,6 @@ namespace od
 		double static calculateHausdorffDistance(std::vector<cv::Point> contour, std::vector<cv::Point> base);
 
 		double static checkKeyPointsMatch(std::vector<cv::KeyPoint> &contour, std::vector<cv::KeyPoint> &base);
+
 	};
 }

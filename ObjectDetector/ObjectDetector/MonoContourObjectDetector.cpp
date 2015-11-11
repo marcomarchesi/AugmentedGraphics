@@ -7,13 +7,13 @@ using namespace std;
 using namespace cv;
 using namespace od;
 
-MonoContourObjectDetector::MonoContourObjectDetector(int minContourPoints, int aspectedContours) :
-ObjectDetector(minContourPoints, aspectedContours)
+MonoContourObjectDetector::MonoContourObjectDetector(int aspectedContours) :
+ObjectDetector(aspectedContours)
 {}
 
 bool MonoContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 {
-	vector<vector<vector<Point>>> compatibleContours = findApproxContours(baseImage, true);
+	vector<vector<vector<Point>>> compatibleContours = findApproxContours(baseImage, true, true);
 
 	if (compatibleContours[0].size() == 0)
 	{
@@ -21,31 +21,28 @@ bool MonoContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 		return false;
 	}
 
-	int minID = 0;
-	int minDist = numeric_limits<int>::max();
-
-	for (int i = 0; i < compatibleContours[0].size(); i++)
-	{
-		if (abs(_minContourPoints - compatibleContours[0][i].size()) < minDist)
-		{
-			minID = i;
-			minDist = _minContourPoints - compatibleContours[0][i].size();
-		}
-	}
-
-	_baseShape = compatibleContours[0][minID];
+	_baseShape = compatibleContours[0][0];
+	_minContourPoints = compatibleContours[0][0].size();
 	
 	Utility::findCentroidsKeypoints(_baseShape, _baseKeypoints, Utility::CentroidDetectionMode::THREE_LOOP);
 
 	//_originalBaseShape = _originalQueryShapes[minID];
 	//_originalQueryShapes.clear();
 
+#ifdef DEBUG_MODE
+	Mat contoursImage(baseImage.size(), CV_8UC1);
+	contoursImage = cv::Scalar(0);
+	drawContours(contoursImage, compatibleContours[0], -1, cv::Scalar(255), 1, CV_AA);
+	imshow("TO FIND CONTOUR", contoursImage);
+#endif
+
 	return true;
 }
 
 vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	cv::Mat image,
-	bool performOpening)
+	bool performOpening,
+	bool findBaseShape)
 {
 	
 	// CREATE ACTIVE ZONE 80% AND 50% ---------------------
@@ -69,12 +66,18 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	_attenuationRect = ease;
 	// ----------------------------------------
 
-	Size imgSize = image.size();
-	Mat gray(image.size(), CV_8UC1);
-	Mat thresh(image.size(), CV_8UC1);
+	Mat roi = image;
 
-	if (image.channels() >= 3)
-		cvtColor(image, gray, CV_BGR2GRAY);
+	Size imgSize = roi.size();
+	Mat gray(imgSize, CV_8UC1);
+	Mat thresh(imgSize, CV_8UC1);
+
+	
+
+	if (roi.channels() >= 3)
+		cvtColor(roi, gray, CV_BGR2GRAY);
+	else
+		roi.copyTo(gray);
 
 	int minThreshold = mean(gray)[0];
 	
@@ -83,8 +86,8 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	{
 		// PERFORM OPENING (Erosion --> Dilation)
 
-		int erosion_size = 5;
-		int dilation_size = 5;
+		int erosion_size = 3;
+		int dilation_size = 3;
 
 		Mat element = getStructuringElement(0, Size(2 * erosion_size, 2 * erosion_size), Point(erosion_size, erosion_size));
 		erode(gray, gray, element);
@@ -115,45 +118,40 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 	vector<vector<Point>> approxContours, originalQueryShapes;
 
+	vector<vector<Point>> biggerContour;
 	for (int i = 0; i < contours.size(); i++)
 	{
+		if (contours[i].size() > 1000)
+			biggerContour.push_back(contours[i]);
+	}
 
-		if (contours[i].size() < _minContourPoints)
-			continue;
+	for (int i = 0; i < biggerContour.size(); i++)
+	{
 
-		convexHull(contours[i], hull, false);
+		//if (contours[i].size() < _minContourPoints)
+		//	continue;
 
-		double epsilon = contours[i].size() * 0.003;
-		approxPolyDP(contours[i], approx, epsilon, true);
+		convexHull(biggerContour[i], hull, false);
 
-#ifdef DEBUG_MODE			
-		contoursImage = Scalar(0);
-		vector<vector<Point>> temp;
-		temp.push_back(hull);
-		drawContours(contoursImage, temp, -1, cv::Scalar(255), 1, CV_AA);
+		double epsilon = biggerContour[i].size() * 0.003;
+		approxPolyDP(biggerContour[i], approx, epsilon, true);
+
+#ifdef DEBUG_MODE		
+		//contoursImage = cv::Scalar(0);
+		//vector<vector<Point>> temp;
+		//temp.push_back(hull);
+		//drawContours(contoursImage, temp, -1, cv::Scalar(255), 1, CV_AA);
+		//imshow("Approx", contoursImage);
 #endif
 
 		// REMOVE TOO EXTERNAL SHAPES -------------
-
-		Moments m = moments(hull, true);
-		int cx = int(m.m10 / m.m00);
-		int cy = int(m.m01 / m.m00);
-
-		Point c(cx, cy);
-
-		if (!(c.x >= _deleteRect.x && 
-			c.y >= _deleteRect.y &&
-			c.x <= (_deleteRect.x + _deleteRect.width) &&
-			c.y <= (_deleteRect.y + _deleteRect.height)))
-			continue;
 
 		Rect bounding = boundingRect(contours[i]);
 
 #ifdef DEBUG_MODE
 		rectangle(contoursImage, _deleteRect, Scalar(255));
 		rectangle(contoursImage, bounding, Scalar(255));
-#endif
-		
+#endif	
 
 		bool isInternal = bounding.x > _deleteRect.x &&
 			bounding.y > _deleteRect.y &&
@@ -161,20 +159,28 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 			bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;	
 
 
-		if (!isInternal)
+		if (!isInternal && !findBaseShape)
 			continue;
 
 		// --------------------------------------------------
 
-		int min, max;
-		min = _minContourPoints - _minContourPoints / 2.4;
-		max = _minContourPoints + _minContourPoints / 2.4;
+		if (findBaseShape)
+		{
+			originalQueryShapes.push_back(approx);
+			approxContours.push_back(hull);
+		}
+		else
+		{
+			int min, max;
+			min = _minContourPoints - _minContourPoints / 2.4;
+			max = _minContourPoints + _minContourPoints / 2.4;
 		
 
-		if (hull.size() >= min && hull.size() <= max)
-		{
-			approxContours.push_back(hull);
-			originalQueryShapes.push_back(approx);
+			if (hull.size() >= min && hull.size() <= max)
+			{
+				approxContours.push_back(hull);
+				originalQueryShapes.push_back(approx);
+			}
 		}
 	}
 
@@ -184,8 +190,31 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	imshow("ApproxContours", contoursImage);
 #endif
 
+
 	vector<vector<vector<Point>>> retVector;
-	retVector.push_back(originalQueryShapes);
+
+	if (findBaseShape)
+	{
+		int maxID = 0;
+		int maxSize = numeric_limits<int>::min();
+
+		for (int i = 0; i < approxContours.size(); i++)
+		{
+			if (approxContours[i].size() > maxSize)
+			{
+				maxSize = approxContours[i].size();
+				maxID = i;
+			}
+		}
+
+		vector<vector<Point>> originalShape;
+		originalShape.push_back(originalQueryShapes[maxID]);
+		retVector.push_back(originalShape);
+	}	
+	else
+	{
+		retVector.push_back(originalQueryShapes);
+	}
 
 	return retVector;
 }

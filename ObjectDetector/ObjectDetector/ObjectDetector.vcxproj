@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CategoryTester.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MonoContourObjectDetector.cpp" />
     <ClCompile Include="MultiContourObjectDetector.cpp" />
@@ -19,7 +20,11 @@
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CategoryTester.h" />
+    <ClInclude Include="CategoryTesterFactory.h" />
     <ClInclude Include="commonInclude.h" />
+    <ClInclude Include="InterCategoryTester.h" />
+    <ClInclude Include="IntraCategoryTester.h" />
     <ClInclude Include="MonoContourObjectDetector.h" />
     <ClInclude Include="MultiContourObjectDetector.h" />
     <ClInclude Include="ObjectDetector.h" />

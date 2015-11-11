@@ -5,6 +5,6 @@ namespace od
 	class ObjectDetectorFactory
 	{
 	public:
-		static ObjectDetector* getObjectDetector(int minContourPoints, int contoursNumber);
+		static ObjectDetector* getObjectDetector(int contoursNumber);
 	};
 }

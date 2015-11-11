@@ -7,14 +7,14 @@ using namespace std;
 using namespace cv;
 using namespace od;
 
-MultiContourObjectDetector::MultiContourObjectDetector(int minContourPoints, int aspectedContours) :
-ObjectDetector(minContourPoints, aspectedContours)
+MultiContourObjectDetector::MultiContourObjectDetector(int aspectedContours) :
+ObjectDetector(aspectedContours)
 {}
 
 
 bool MultiContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 {
-	vector<vector<vector<Point>>> approxContours = findApproxContours(baseImage, true);
+	vector<vector<vector<Point>>> approxContours = findApproxContours(baseImage, true, true);
 
 	if (approxContours.size() == 0)
 	{
@@ -35,7 +35,8 @@ bool MultiContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 
 std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::findApproxContours(
 	cv::Mat image,
-	bool performOpening)
+	bool performOpening,
+	bool findBaseShape)
 {
 
 	// CREATE ACTIVE ZONE 80% AND 50% ---------------------

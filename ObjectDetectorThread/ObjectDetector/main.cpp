@@ -51,7 +51,7 @@ int main(int, char)
 		return 0;
 	}
 
-	/*
+	
 	time(&start);
 	for (;;)
 	{
@@ -76,7 +76,7 @@ int main(int, char)
 		if (waitKey(30) > 0)
 			break;
 	}
-	*/
+	
 	
 	counter = 0;
 	time(&start);	
