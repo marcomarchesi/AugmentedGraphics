@@ -12,6 +12,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CategoryTester.cpp" />
+    <ClCompile Include="CategoryTesterFactory.cpp" />
+    <ClCompile Include="InterCategoryTester.cpp" />
+    <ClCompile Include="IntraCategoryTester.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MonoContourObjectDetector.cpp" />
     <ClCompile Include="MultiContourObjectDetector.cpp" />

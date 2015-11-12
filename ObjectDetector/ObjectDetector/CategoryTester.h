@@ -1,5 +1,13 @@
+#ifndef CATEGORY_TESTER
+#define CATEGORY_TESTER
+
 
 #include "ObjectDetector.h"
+#include <time.h>
+#include <windows.h>
+#include <tchar.h> 
+#include <stdio.h>
+#include <strsafe.h>
 
 namespace od
 {
@@ -19,7 +27,11 @@ namespace od
 
 		bool setCategory(char* category);
 
-		virtual double startTest() = 0;
+		double startTest();
+
+	private:
+
+		virtual double categoryDetectionRate() = 0;
 
 	protected:
 
@@ -33,4 +45,4 @@ namespace od
 	};
 }
 
-
+#endif

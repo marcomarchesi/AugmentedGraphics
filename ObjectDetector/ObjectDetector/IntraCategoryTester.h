@@ -14,6 +14,6 @@ namespace od
 
 		IntraCategoryTester(od::ObjectDetector* detector, double hammingThreshold, double correlationThreshold);
 
-		double startTest();
+		double categoryDetectionRate();
 	};
 }

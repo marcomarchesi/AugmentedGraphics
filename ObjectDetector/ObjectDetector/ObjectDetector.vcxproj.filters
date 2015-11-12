@@ -13,60 +13,81 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Detectors">
+      <UniqueIdentifier>{3f4b0754-dd70-459a-bf21-b84f19bdee47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Test">
+      <UniqueIdentifier>{9ee8400d-726e-49f9-82c4-3d1d7307bac7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Detectors">
+      <UniqueIdentifier>{55aa3c24-4434-4f6e-8140-a8beecb2654f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Test">
+      <UniqueIdentifier>{e3c227c8-4fbe-49af-bd1c-5c155e6b2fc2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MonoContourObjectDetector.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Detectors</Filter>
     </ClCompile>
     <ClCompile Include="MultiContourObjectDetector.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ObjectDetectorFactory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utility.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Detectors</Filter>
     </ClCompile>
     <ClCompile Include="ObjectDetector.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Detectors</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectDetectorFactory.cpp">
+      <Filter>Source Files\Detectors</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility.cpp">
+      <Filter>Source Files\Detectors</Filter>
     </ClCompile>
     <ClCompile Include="CategoryTester.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="InterCategoryTester.cpp">
+      <Filter>Source Files\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="CategoryTesterFactory.cpp">
+      <Filter>Source Files\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="IntraCategoryTester.cpp">
+      <Filter>Source Files\Test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MonoContourObjectDetector.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MultiContourObjectDetector.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ObjectDetector.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utility.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ObjectDetectorFactory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="commonInclude.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MonoContourObjectDetector.h">
+      <Filter>Header Files\Detectors</Filter>
+    </ClInclude>
+    <ClInclude Include="MultiContourObjectDetector.h">
+      <Filter>Header Files\Detectors</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectDetector.h">
+      <Filter>Header Files\Detectors</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectDetectorFactory.h">
+      <Filter>Header Files\Detectors</Filter>
+    </ClInclude>
     <ClInclude Include="CategoryTester.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InterCategoryTester.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IntraCategoryTester.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Test</Filter>
     </ClInclude>
     <ClInclude Include="CategoryTesterFactory.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="InterCategoryTester.h">
+      <Filter>Header Files\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="IntraCategoryTester.h">
+      <Filter>Header Files\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility.h">
+      <Filter>Header Files\Detectors</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

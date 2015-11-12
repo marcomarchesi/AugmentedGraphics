@@ -11,6 +11,14 @@ namespace od
 			INTRA_CATEGORY_TEST_MODE
 		};
 
-		static CategoryTester* getCategoryTester(TestMode test);
+		static CategoryTester* getCategoryTester(TestMode test, od::ObjectDetector* detector, char* datasetDirectory, double hammingThreshold, double correlationThreshold);
+
+		static CategoryTester* getCategoryTester(TestMode test, od::ObjectDetector* detector, double hammingThreshold, double correlationThreshold);
+
+		static CategoryTester* getCategoryTester(TestMode test, od::ObjectDetector* detector, char* datasetDirectory);
+
+		static CategoryTester* getCategoryTester(TestMode test, od::ObjectDetector* detector);
+
+
 	};
 }

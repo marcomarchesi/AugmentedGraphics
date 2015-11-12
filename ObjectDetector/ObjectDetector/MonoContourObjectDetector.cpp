@@ -13,6 +13,9 @@ ObjectDetector(aspectedContours)
 
 bool MonoContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 {
+	_baseShape.clear();
+	_minContourPoints = 0;
+
 	vector<vector<vector<Point>>> compatibleContours = findApproxContours(baseImage, true, true);
 
 	if (compatibleContours[0].size() == 0)
@@ -116,12 +119,18 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	imshow("ContoursImage", contoursImage);
 #endif
 
+
+	int minPoint, maxPoint;
+	minPoint = _minContourPoints - _minContourPoints / 1.5;
+	maxPoint = _minContourPoints + _minContourPoints / 1.5;
+
+
 	vector<vector<Point>> approxContours, originalQueryShapes;
 
 	vector<vector<Point>> biggerContour;
 	for (int i = 0; i < contours.size(); i++)
 	{
-		if (contours[i].size() > 1000)
+		if (contours[i].size() > 400)
 			biggerContour.push_back(contours[i]);
 	}
 
@@ -136,31 +145,26 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 		double epsilon = biggerContour[i].size() * 0.003;
 		approxPolyDP(biggerContour[i], approx, epsilon, true);
 
-#ifdef DEBUG_MODE		
-		//contoursImage = cv::Scalar(0);
-		//vector<vector<Point>> temp;
-		//temp.push_back(hull);
-		//drawContours(contoursImage, temp, -1, cv::Scalar(255), 1, CV_AA);
-		//imshow("Approx", contoursImage);
-#endif
+//#ifdef DEBUG_MODE		
+//		contoursImage = cv::Scalar(0);
+//		vector<vector<Point>> temp;
+//		temp.push_back(hull);
+//		drawContours(contoursImage, temp, -1, cv::Scalar(255), 1, CV_AA);
+//		imshow("Approx", contoursImage);
+//#endif
 
 		// REMOVE TOO EXTERNAL SHAPES -------------
 
-		Rect bounding = boundingRect(contours[i]);
+		//Rect bounding = boundingRect(contours[i]);
 
-#ifdef DEBUG_MODE
-		rectangle(contoursImage, _deleteRect, Scalar(255));
-		rectangle(contoursImage, bounding, Scalar(255));
-#endif	
-
-		bool isInternal = bounding.x > _deleteRect.x &&
-			bounding.y > _deleteRect.y &&
-			bounding.x + bounding.width < _deleteRect.x + _deleteRect.width &&
-			bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;	
+		//bool isInternal = bounding.x > _deleteRect.x &&
+		//	bounding.y > _deleteRect.y &&
+		//	bounding.x + bounding.width < _deleteRect.x + _deleteRect.width &&
+		//	bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;	
 
 
-		if (!isInternal && !findBaseShape)
-			continue;
+		//if (!isInternal && !findBaseShape)
+		//	continue;
 
 		// --------------------------------------------------
 
@@ -171,12 +175,7 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 		}
 		else
 		{
-			int min, max;
-			min = _minContourPoints - _minContourPoints / 2.4;
-			max = _minContourPoints + _minContourPoints / 2.4;
-		
-
-			if (hull.size() >= min && hull.size() <= max)
+			if (hull.size() >= minPoint && hull.size() <= maxPoint)
 			{
 				approxContours.push_back(hull);
 				originalQueryShapes.push_back(approx);
@@ -245,7 +244,7 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 			c.y >= _attenuationRect.y &&
 			c.x <= (_attenuationRect.x + _attenuationRect.width) &&
 			c.y <= (_attenuationRect.y + _attenuationRect.height)))
-			attenuation = 10;
+			attenuation = 0;
 
 
 		double hamming = Utility::calculateContourPercentageCompatibility(approxContours[0][i], _baseShape);		

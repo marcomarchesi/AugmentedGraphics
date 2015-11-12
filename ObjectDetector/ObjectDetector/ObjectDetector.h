@@ -17,7 +17,8 @@ namespace od
 
 		enum OutputMaskMode{
 			CONVEX_HULL,
-			PRECISE
+			PRECISE,
+			NO_MASK
 		};
 
 		ObjectDetector(int aspectedContours);
