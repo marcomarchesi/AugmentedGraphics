@@ -69,6 +69,7 @@ double InterCategoryTester::categoryDetectionRate()
 	hFind = FindFirstFile(setDir, &file);
 
 	namedWindow("SAMPLE", 1);
+	
 
 	do
 	{
@@ -118,6 +119,7 @@ double InterCategoryTester::categoryDetectionRate()
 
 		cout << "Sample image loaded in the detector" << endl;
 		imshow("SAMPLE", sampleImage);
+		waitKey(33);
 
 		for (int k = 0; k < categoryFiles.size(); k++)
 		{

@@ -69,18 +69,41 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	_attenuationRect = ease;
 	// ----------------------------------------
 
-	Mat roi = image;
+	bool imageTooBig = false;
 
-	Size imgSize = roi.size();
+	Mat newImage;
+
+	if (image.size().height >= 800 || image.size().width >= 800)
+	{
+		imageTooBig = true;
+		newImage = image;
+	}
+	else if (image.size().height <= 600 || image.size().width <= 600)
+	{
+
+		int increment = 600 - min(image.size().width, image.size().height);
+		newImage = Mat(Size(image.size().width + increment, image.size().height + increment), image.type());
+		newImage = Scalar(255,255,255);
+		
+		Point nc(newImage.size().width / 2, newImage.size().height / 2);
+		int incH = image.size().height;
+		int incW = image.size().width;
+		int incX = nc.x - incW / 2;
+		int incY = nc.y - incH / 2;
+
+		image.copyTo(newImage(Rect(incX, incY, incW, incH)));
+	}
+	
+
+	Size imgSize = newImage.size();
 	Mat gray(imgSize, CV_8UC1);
 	Mat thresh(imgSize, CV_8UC1);
 
-	
 
-	if (roi.channels() >= 3)
-		cvtColor(roi, gray, CV_BGR2GRAY);
+	if (newImage.channels() >= 3)
+		cvtColor(newImage, gray, CV_BGR2GRAY);
 	else
-		roi.copyTo(gray);
+		newImage.copyTo(gray);
 
 	int minThreshold = mean(gray)[0];
 	
@@ -155,16 +178,20 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 		// REMOVE TOO EXTERNAL SHAPES -------------
 
-		//Rect bounding = boundingRect(contours[i]);
+		if (imageTooBig)
+		{
+			Rect bounding = boundingRect(contours[i]);
 
-		//bool isInternal = bounding.x > _deleteRect.x &&
-		//	bounding.y > _deleteRect.y &&
-		//	bounding.x + bounding.width < _deleteRect.x + _deleteRect.width &&
-		//	bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;	
+			bool isInternal = bounding.x > _deleteRect.x &&
+				bounding.y > _deleteRect.y &&
+				bounding.x + bounding.width < _deleteRect.x + _deleteRect.width &&
+				bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;	
 
 
-		//if (!isInternal && !findBaseShape)
-		//	continue;
+			if (!isInternal && !findBaseShape)
+				continue;
+		}
+
 
 		// --------------------------------------------------
 
@@ -195,7 +222,7 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 	if (findBaseShape)
 	{
 		int maxID = 0;
-		int maxSize = numeric_limits<int>::min();
+		int maxSize = 0;
 
 		for (int i = 0; i < approxContours.size(); i++)
 		{
