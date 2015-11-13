@@ -1011,6 +1011,7 @@ void Utility::findCentroidsKeypoints(std::vector<cv::Point> contour,
 													std::vector<cv::Point>& centroids,													
 													CentroidDetectionMode mode)
 {
+	centroids.clear();
 	Rect box = boundingRect(contour);
 
 	box.height += 4;

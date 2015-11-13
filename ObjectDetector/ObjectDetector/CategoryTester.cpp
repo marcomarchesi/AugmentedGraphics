@@ -11,7 +11,7 @@ CategoryTester::CategoryTester(od::ObjectDetector* detector) :
 			_detector(detector),
 			_datasetDirectory("101_test"),
 			_hammingThreshold(70),
-			_correlationThreshold(50),
+			_correlationThreshold(40),
 			_choosenCategory(NULL)
 {}
 
@@ -19,7 +19,7 @@ CategoryTester::CategoryTester(od::ObjectDetector* detector, char* datasetDirect
 			_detector(detector),
 			_datasetDirectory(datasetDirectory),
 			_hammingThreshold(70),
-			_correlationThreshold(45),
+			_correlationThreshold(40),
 			_choosenCategory(NULL)
 {}
 

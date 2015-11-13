@@ -73,17 +73,14 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 	Mat newImage;
 
-	if (image.size().height >= 800 || image.size().width >= 800)
+	if (image.size().height <= 400 || image.size().width <= 400)
 	{
-		imageTooBig = true;
-		newImage = image;
-	}
-	else if (image.size().height <= 600 || image.size().width <= 600)
-	{
+		Mat pickColor = image(Rect((image.size().width / 2) - 1, image.size().height - 2, 2, 2));
+		Scalar color = mean(pickColor);
 
-		int increment = 600 - min(image.size().width, image.size().height);
+		int increment = 2;
 		newImage = Mat(Size(image.size().width + increment, image.size().height + increment), image.type());
-		newImage = Scalar(255,255,255);
+		newImage = color;
 		
 		Point nc(newImage.size().width / 2, newImage.size().height / 2);
 		int incH = image.size().height;
@@ -92,6 +89,11 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 		int incY = nc.y - incH / 2;
 
 		image.copyTo(newImage(Rect(incX, incY, incW, incH)));
+	}
+	else
+	{
+		imageTooBig = true;
+		newImage = image;
 	}
 	
 
@@ -114,6 +116,12 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 		int erosion_size = 3;
 		int dilation_size = 3;
+
+		if (imageTooBig)
+		{
+			erosion_size = 5;
+			dilation_size = 5;
+		}
 
 		Mat element = getStructuringElement(0, Size(2 * erosion_size, 2 * erosion_size), Point(erosion_size, erosion_size));
 		erode(gray, gray, element);
@@ -180,7 +188,12 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 		if (imageTooBig)
 		{
-			Rect bounding = boundingRect(contours[i]);
+			Rect bounding = boundingRect(biggerContour[i]);
+
+#ifdef DEBUG_MODE
+			rectangle(contoursImage, bounding, Scalar(255));
+			rectangle(contoursImage, _deleteRect, Scalar(255));
+#endif
 
 			bool isInternal = bounding.x > _deleteRect.x &&
 				bounding.y > _deleteRect.y &&
@@ -188,7 +201,7 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 				bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;	
 
 
-			if (!isInternal && !findBaseShape)
+			if (!isInternal)
 				continue;
 		}
 

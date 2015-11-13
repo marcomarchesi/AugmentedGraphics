@@ -48,10 +48,10 @@
     <ClCompile Include="CategoryTester.cpp">
       <Filter>Source Files\Test</Filter>
     </ClCompile>
-    <ClCompile Include="InterCategoryTester.cpp">
+    <ClCompile Include="CategoryTesterFactory.cpp">
       <Filter>Source Files\Test</Filter>
     </ClCompile>
-    <ClCompile Include="CategoryTesterFactory.cpp">
+    <ClCompile Include="InterCategoryTester.cpp">
       <Filter>Source Files\Test</Filter>
     </ClCompile>
     <ClCompile Include="IntraCategoryTester.cpp">
@@ -77,6 +77,9 @@
     <ClInclude Include="CategoryTester.h">
       <Filter>Header Files\Test</Filter>
     </ClInclude>
+    <ClInclude Include="Utility.h">
+      <Filter>Header Files\Detectors</Filter>
+    </ClInclude>
     <ClInclude Include="CategoryTesterFactory.h">
       <Filter>Header Files\Test</Filter>
     </ClInclude>
@@ -85,9 +88,6 @@
     </ClInclude>
     <ClInclude Include="IntraCategoryTester.h">
       <Filter>Header Files\Test</Filter>
-    </ClInclude>
-    <ClInclude Include="Utility.h">
-      <Filter>Header Files\Detectors</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

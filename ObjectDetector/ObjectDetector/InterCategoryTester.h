@@ -1,12 +1,8 @@
 #include "CategoryTester.h"
 
-#include "opencv2/opencv.hpp"
-
-
-
 namespace od
 {
-	class InterCategoryTester : public CategoryTester{
+	class InterCategoryTester: public CategoryTester{
 
 	public:
 

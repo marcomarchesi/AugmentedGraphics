@@ -179,10 +179,23 @@ int main(int, char)
 	*/
 
 
+	cout << "1 = INTRA_CATEGORY_TEST / 2 = INTER_CATEGORY_TEST" << endl;
+	cout << "Mode: ";
+
+	char mode[256];
+	gets(mode);
+
+	CategoryTesterFactory::TestMode tm;
+
+	if (strcmp(mode, "1") == 0)
+		tm = CategoryTesterFactory::TestMode::INTRA_CATEGORY_TEST_MODE;
+	else
+		tm = CategoryTesterFactory::TestMode::INTER_CATEGORY_TEST_MODE;
+
 
 	// INTER-CATEGORY TEST
 
-	CategoryTester* interTester = CategoryTesterFactory::getCategoryTester(CategoryTesterFactory::TestMode::INTRA_CATEGORY_TEST_MODE, detector);
+	CategoryTester* interTester = CategoryTesterFactory::getCategoryTester(tm, detector);
 
 	vector<string> categories = interTester->loadCategories();
 
@@ -193,7 +206,7 @@ int main(int, char)
 	{
 		cout << categories[i] << endl;
 	}
-	cout << "category: ";
+	cout << endl << "category: ";
 
 	gets(choosen);
 

@@ -9,8 +9,8 @@ using namespace od;
 
 ObjectDetector::ObjectDetector(int aspectedContours):
 	_aspectedContours(aspectedContours),
-	_deleteFocus(0.85),
-	_attenuationFocus(0.40)
+	_deleteFocus(0.7),
+	_attenuationFocus(1)
 {}
 
 
