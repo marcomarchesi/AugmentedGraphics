@@ -68,40 +68,22 @@ String loadRandomImage(char* dir)
 
 int main(int, char)
 {
-	/*
+
+
+	
+
+	
 	String filename;
-	Mat baseImage;
-
-	namedWindow("change image (SPACE) continue (a)", 1);
-	for (;;)
-	{
-		filename = loadRandomImage("101_test");
-
-		if (filename.c_str() == NULL)
-			exit(1);
-
-		baseImage = imread(filename);
-
-		if (baseImage.empty())
-			exit(2);
-		
-		imshow("change image (SPACE) continue (a)", baseImage);
-
-		int c = waitKey(0);
-		if (c == 'a')
-			break;
-	}
-	*/
-
+	Mat baseImage = imread("mecha2.jpg");
+	
 	ObjectDetector* detector = ObjectDetectorFactory::getObjectDetector(1);
-	/*
 	if(!detector->loadImage(baseImage))
 		exit(1);
-	*/
+	/*
 	
 	// TEST SINGLE IMAGE
-	/*
-	Mat image = imread("mecha2.jpg");
+	
+	Mat image = imread("stelle.jpg");
 
 	if (image.empty())
 		exit(2);
@@ -109,24 +91,28 @@ int main(int, char)
 	
 	if (image.size().height > 800 || image.size().width > 800)
 	{
-		Size s = image.size(), small;
-		small.height = s.height / 3;
-		small.width = s.width / 3;
+		Size s = image.size(), ss;
+		ss.height = s.height / 3;
+		ss.width = s.width / 3;
 
-		resize(image, image, small);
+		resize(image, image, ss);
 	}
 	
 	
 	vector<vector<vector<Point>>> objects;
 	int numberOfObjects = 0;
 
-	Mat mask = detector->findObjectsInImage(image, 50, 50, ObjectDetector::OutputMaskMode::CONVEX_HULL, &objects, &numberOfObjects);
+	Mat mask = detector->findObjectsInImage(image, 50, 50, ObjectDetector::OutputMaskMode::PRECISE_CONTOURS, &objects, &numberOfObjects);
 
 	imshow("FINAL RESULT",mask);
+	waitKey(0);
+
 	*/
 
 	// TEST VIDEO CAPTURE
-	/*
+	
+
+
 	Mat image;
 	Mat fpsImg(Size(100, 50), CV_8UC1);
 
@@ -158,7 +144,7 @@ int main(int, char)
 		
 		
 
-		Mat result = detector->findObjectsInImage(image, 75, 50, ObjectDetector::OutputMaskMode::CONVEX_HULL, &objects, &numberOfObjects);
+		Mat result = detector->findObjectsInImage(image, 75, 50, ObjectDetector::OutputMaskMode::PRECISE_CONTOURS, &objects, &numberOfObjects);
 		
 		
 		time(&end);
@@ -176,7 +162,7 @@ int main(int, char)
 		if (waitKey(30) > 0)
 			break;
 	}
-	*/
+	
 
 
 	cout << "1 = INTRA_CATEGORY_TEST / 2 = INTER_CATEGORY_TEST" << endl;

@@ -7,8 +7,8 @@ using namespace std;
 using namespace cv;
 using namespace od;
 
-MultiContourObjectDetector::MultiContourObjectDetector(int aspectedContours) :
-ObjectDetector(aspectedContours)
+MultiContourObjectDetector::MultiContourObjectDetector() :
+ObjectDetector()
 {}
 
 
@@ -22,14 +22,28 @@ bool MultiContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 		return false;
 	}
 
-	for (int i = 0; i < approxContours.size(); i++)
+	_baseShape = approxContours[0];
+	_aspectedContours = _baseShape.size();
+	_minContourPoints = numeric_limits<int>::max();
+
+	for (int i = 0; i < _baseShape.size(); i++)
 	{
-		if (approxContours[i].size() == _aspectedContours)
-		{
-			_baseShape = approxContours[i];
-			break;
-		}
+		vector<Point> tempKeypoints;
+
+		Utility::findCentroidsKeypoints(_baseShape[i], tempKeypoints, Utility::CentroidDetectionMode::THREE_LOOP);
+		_baseKeypoints.push_back(tempKeypoints);
+
+		if (_baseShape[i].size() < _minContourPoints)
+			_minContourPoints = _baseShape[i].size();
 	}
+
+#ifdef DEBUG_MODE
+	Mat contoursImage(baseImage.size(), CV_8UC1);
+	contoursImage = cv::Scalar(0);
+	drawContours(contoursImage,_baseShape, -1, cv::Scalar(255), 1, CV_AA);
+	imshow("TO FIND CONTOUR", contoursImage);
+#endif
+		
 	return true;
 }
 
@@ -60,21 +74,56 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 	_attenuationRect = ease;
 	// ----------------------------------------
 
-	Size imgSize = image.size();
-	Mat gray(image.size(), CV_8UC1);
-	Mat thresh(image.size(), CV_8UC1);
+	bool imageTooBig = false;
 
-	if (image.channels() >= 3)
-		cvtColor(image, gray, CV_BGR2GRAY);
+	Mat newImage;
 
-	int minThreshold = mean(gray)[0];	
+	if (image.size().height <= 400 || image.size().width <= 400)
+	{
+		Mat pickColor = image(Rect((image.size().width / 2) - 1, image.size().height - 2, 2, 2));
+		Scalar color = mean(pickColor);
+
+		int increment = 2;
+		newImage = Mat(Size(image.size().width + increment, image.size().height + increment), image.type());
+		newImage = color;
+
+		Point nc(newImage.size().width / 2, newImage.size().height / 2);
+		int incH = image.size().height;
+		int incW = image.size().width;
+		int incX = nc.x - incW / 2;
+		int incY = nc.y - incH / 2;
+
+		image.copyTo(newImage(Rect(incX, incY, incW, incH)));
+	}
+	else
+	{
+		imageTooBig = true;
+		newImage = image;
+	}
+
+	Size imgSize = newImage.size();
+	Mat gray(imgSize, CV_8UC1);
+	Mat thresh(imgSize, CV_8UC1);
+
+	if (newImage.channels() >= 3)
+		cvtColor(newImage, gray, CV_BGR2GRAY);
+	else
+		newImage.copyTo(gray);
+
+	int minThreshold;
 
 	if (performOpening)
 	{
 		// PERFORM OPENING (Erosion --> Dilation)
 
-		int erosion_size = 4;
-		int dilation_size = 4;
+		int erosion_size = 3;
+		int dilation_size = 3;
+
+		if (imageTooBig)
+		{
+			erosion_size = 5;
+			dilation_size = 5;
+		}
 
 		Mat element = getStructuringElement(0, Size(2 * erosion_size, 2 * erosion_size), Point(erosion_size, erosion_size));
 		erode(gray, gray, element);
@@ -97,21 +146,13 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 
 	vector<vector<Point>> contours;
 	vector<Vec4i> hierarchy;
-	vector<Point> approx;
+	vector<Point> hull, approx;
 
 	map<int, vector<vector<Point>>> hierachedContours;
 	map<int, vector<vector<Point>>> approxHContours;
 
-
-	try
-	{
-		findContours(thresh, contours, hierarchy, CV_RETR_TREE, CHAIN_APPROX_NONE);
-	}
-	catch (const Exception& e)
-	{
-		cerr << e.what();
-	}
-
+	findContours(thresh, contours, hierarchy, CV_RETR_TREE, CHAIN_APPROX_NONE);
+	
 
 #ifdef DEBUG_MODE
 	Mat tempI(image.size(), CV_8UC1);
@@ -123,9 +164,11 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 
 
 	vector<vector<Point>> temp;
+
 	// CATALOG BY HIERARCHY LOOP
 	for (int i = 0; i < contours.size(); i++)
 	{
+
 #ifdef DEBUG_MODE
 		tempI = Scalar(0);
 		temp.clear();
@@ -161,16 +204,25 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 	}
 
 
+	int minPoint, maxPoint;
+	minPoint = _minContourPoints - _minContourPoints / 2.1;
+	maxPoint = _minContourPoints + _minContourPoints / 1.5;
+	
+
 	// APPROX LOOP
 
 	for (map<int, vector<vector<Point>>>::iterator it = hierachedContours.begin(); it != hierachedContours.end(); it++)
 	{
 
+		if (it->second[0].size() < 400)
+			continue;
+
 #ifdef DEBUG_MODE
 		tempI = Scalar(0);
 		drawContours(tempI, it->second, -1, cv::Scalar(255), 1, CV_AA);
 #endif
-		if (it == hierachedContours.begin() && contours.size() > _aspectedContours)
+
+		if (it == hierachedContours.begin() && it->second.size() < _aspectedContours)
 			continue;
 
 		for (int k = 0; k < it->second.size(); k++)
@@ -183,10 +235,10 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 					continue;
 			}
 
-			convexHull(it->second[k], approx, false);
+			convexHull(it->second[k], hull, false);
 
-			//double epsilon = it->second[k].size() * 0.025;
-			//approxPolyDP(it->second[k], approx, epsilon, true);
+			double epsilon = it->second[k].size() * 0.003;
+			approxPolyDP(it->second[k], approx, epsilon, true);
 
 #ifdef DEBUG_MODE			
 			tempI = Scalar(0);
@@ -197,46 +249,40 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 
 			// REMOVE TOO EXTERNAL SHAPES -------------
 
-			Moments m = moments(approx, true);
-			int cx = int(m.m10 / m.m00);
-			int cy = int(m.m01 / m.m00);
-
-			Point c(cx, cy);
-
-			if (!(c.x >= _deleteRect.x &&
-				c.y >= _deleteRect.y &&
-				c.x <= (_deleteRect.x + _deleteRect.width) &&
-				c.y <= (_deleteRect.y + _deleteRect.height)))
+			if(imageTooBig)
 			{
-				if (k == 0) // se è il padre elimino tutta la figura
-					break;				
-			}
-
-			Rect bounding = boundingRect(it->second[k]);
+				Rect bounding = boundingRect(it->second[k]);
 
 #ifdef DEBUG_MODE
-			rectangle(tempI, _deleteRect, Scalar(255));
-			rectangle(tempI, bounding, Scalar(255));
+				rectangle(tempI, _deleteRect, Scalar(255));
+				rectangle(tempI, bounding, Scalar(255));
 #endif
-			bool isInternal = bounding.x > _deleteRect.x &&
-				bounding.y > _deleteRect.y &&
-				bounding.x + bounding.width < _deleteRect.x + _deleteRect.width &&
-				bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;
+
+				bool isInternal = bounding.x > _deleteRect.x &&
+					bounding.y > _deleteRect.y &&
+					bounding.x + bounding.width < _deleteRect.x + _deleteRect.width &&
+					bounding.y + bounding.height < _deleteRect.y + _deleteRect.height;
 
 
-			if (!isInternal)
-			{
-				if (k == 0)
-					break;
+				if (!isInternal)
+				{
+					if (k == 0)
+						break;
+				}
 			}
+			
 			// --------------------------------------------------
 
-			if (approx.size() < _minContourPoints)
+			if (!findBaseShape)
 			{
-				if (k == 0) // padre
-					break;
-				else        // figlio
-					continue;
+				if (hull.size() < minPoint || hull.size() > maxPoint)
+				{
+					if (k == 0) // padre
+						break;
+					else        // figlio
+						continue;
+				}
+
 			}
 
 
@@ -252,13 +298,39 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::fin
 		}
 	}
 
+	int maxSize = 0,
+		maxID = 0;
 
 	vector<vector<vector<Point>>> lookupVector;
 	for (map<int, vector<vector<Point>>>::iterator it = approxHContours.begin(); it != approxHContours.end(); it++)
 	{
 		if (it->second.size() <= 1)
 			continue;
-		lookupVector.push_back(it->second);
+
+		if (findBaseShape)
+		{
+			int totSize = 0;
+			for (int k = 0; k < it->second.size(); k++)
+			{
+				totSize += it->second[k].size();
+			}
+
+			if (totSize > maxSize)
+			{
+				maxSize = totSize;
+				maxID = it->first;
+			}
+		}
+		else
+		{
+			lookupVector.push_back(it->second);
+		}
+
+	}
+
+	if (findBaseShape)
+	{
+		lookupVector.push_back(approxHContours.at(maxID));
 	}
 
 	return lookupVector;
@@ -300,10 +372,13 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::pro
 			c.y >= _attenuationRect.y &&
 			c.x <= (_attenuationRect.x + _attenuationRect.width) &&
 			c.y <= (_attenuationRect.y + _attenuationRect.height)))
-			attenuation = 15;		
+			attenuation = 5;		
 
 		// C and H with external contour
-		totCorrelation += (utility.correlationWithBase(approxContours[i][0], _baseShape[0]) - attenuation);
+		vector<Point> externalKeypoints;
+		Utility::findCentroidsKeypoints(approxContours[i][0], externalKeypoints, Utility::CentroidDetectionMode::THREE_LOOP);
+		totCorrelation += (utility.correlationWithBase(externalKeypoints, _baseKeypoints[0]) - attenuation);
+
 		totHamming += (utility.calculateContourPercentageCompatibility(approxContours[i][0], _baseShape[0]) - attenuation);
 
 		// looking for the contour with the better cnetroids and shape match
@@ -322,7 +397,7 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::pro
 				c.y >= _attenuationRect.y &&
 				c.x <= (_attenuationRect.x + _attenuationRect.width) &&
 				c.y <= (_attenuationRect.y + _attenuationRect.height)))
-				attenuation = 15;
+				attenuation = 5;
 
 
 			double maxCorrelation = std::numeric_limits<double>::min(),
@@ -330,7 +405,10 @@ std::vector<std::vector<std::vector<cv::Point>>> MultiContourObjectDetector::pro
 
 			for (int k = 1; k < _baseShape.size(); k++)
 			{
-				maxCorrelation = max(maxCorrelation, utility.correlationWithBase(approxContours[i][j], _baseShape[k]));
+				vector<Point> internalKeypoints;
+				Utility::findCentroidsKeypoints(approxContours[i][j], internalKeypoints, Utility::CentroidDetectionMode::THREE_LOOP);
+				maxCorrelation = max(maxCorrelation, utility.correlationWithBase(internalKeypoints, _baseKeypoints[k]));
+
 				maxHamming = max(maxHamming, utility.calculateContourPercentageCompatibility(approxContours[i][j], _baseShape[k]));
 			}
 

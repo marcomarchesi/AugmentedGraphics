@@ -6,18 +6,18 @@ namespace od
 
 	public:
 
-		MultiContourObjectDetector(int aspectedContours);
+		OBJECTDETECTOR_API MultiContourObjectDetector();
 
 	private:
 
-		bool findBaseShape(cv::Mat& baseImage);
+		OBJECTDETECTOR_API bool findBaseShape(cv::Mat& baseImage);
 
-		std::vector<std::vector<std::vector<cv::Point>>> findApproxContours(
+		OBJECTDETECTOR_API std::vector<std::vector<std::vector<cv::Point>>> findApproxContours(
 			cv::Mat image,
 			bool performOpening
 			, bool findBaseShape);
 
-		std::vector<std::vector<std::vector<cv::Point>>> processContours(
+		OBJECTDETECTOR_API std::vector<std::vector<std::vector<cv::Point>>> processContours(
 			std::vector<std::vector<std::vector<cv::Point>>> approxContours,
 			double hammingThreshold,
 			double correlationThreshold,
@@ -25,5 +25,6 @@ namespace od
 
 
 		std::vector<std::vector<cv::Point>> _baseShape;
+		std::vector<std::vector<cv::Point>> _baseKeypoints;
 	};
 }

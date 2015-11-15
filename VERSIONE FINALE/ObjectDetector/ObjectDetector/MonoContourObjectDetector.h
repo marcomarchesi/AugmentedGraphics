@@ -6,7 +6,7 @@ namespace od
 
 	public:
 
-		MonoContourObjectDetector(int aspectedContours);
+		MonoContourObjectDetector();
 
 	private:
 
@@ -26,10 +26,7 @@ namespace od
 
 
 		std::vector<cv::Point> _baseShape;
-		std::vector<cv::Point> _baseKeypoints;
-		//std::vector<cv::Point> _originalBaseShape;
-
-		//std::vector<std::vector<cv::Point>> _originalQueryShapes;
+		std::vector<cv::Point> _baseKeypoints;		
 		
 	};
 }

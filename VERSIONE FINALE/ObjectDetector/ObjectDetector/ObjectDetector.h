@@ -16,12 +16,11 @@ namespace od
 	public:
 
 		enum OutputMaskMode{
-			CONVEX_HULL,
-			PRECISE,
+			PRECISE_CONTOURS,
 			NO_MASK
 		};
 
-		ObjectDetector(int aspectedContours);
+		ObjectDetector();
 
 		cv::Mat findObjectsInImage(cv::Mat& image,
 			double hammingThreshold,
@@ -56,7 +55,7 @@ namespace od
 		cv::Size _baseSize;
 
 		int _minContourPoints;
-		const int _aspectedContours;
+		int _aspectedContours;
 
 		const double _deleteFocus;
 		const double _attenuationFocus;

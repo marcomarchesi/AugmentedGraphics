@@ -7,9 +7,8 @@ using namespace std;
 using namespace cv;
 using namespace od;
 
-ObjectDetector::ObjectDetector(int aspectedContours):
-	_aspectedContours(aspectedContours),
-	_deleteFocus(0.7),
+ObjectDetector::ObjectDetector():
+	_deleteFocus(0.79),
 	_attenuationFocus(1)
 {}
 
@@ -91,8 +90,10 @@ cv::Mat ObjectDetector::generateDetectionMask(
 
 	for (int i = 0; i < detectedObjects.size(); i++)
 	{
-		if (maskMode == OutputMaskMode::PRECISE)
+		/*
+		if (maskMode == OutputMaskMode::CONVEX_HULL)
 		{
+			
 			vector<vector<Point>> preciseContours;
 
 			for (int j = 0; j < detectedObjects[i].size(); j++)
@@ -204,8 +205,11 @@ cv::Mat ObjectDetector::generateDetectionMask(
 
 
 			drawContours(mask, preciseContours, -1, pen, -1, CV_AA);
-		}
-		else if (maskMode == OutputMaskMode::CONVEX_HULL)
+			
+			
+			
+		}*/
+		if (maskMode == OutputMaskMode::PRECISE_CONTOURS)
 		{
 			drawContours(mask, detectedObjects[i], -1, pen, -1, CV_AA);
 		}	

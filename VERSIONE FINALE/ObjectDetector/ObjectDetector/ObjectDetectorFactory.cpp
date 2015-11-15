@@ -10,10 +10,10 @@ using namespace od;
 ObjectDetector* ObjectDetectorFactory::getObjectDetector(int contoursNumber)
 {
 	if (contoursNumber == 1)
-		return (ObjectDetector*)new MonoContourObjectDetector(contoursNumber);
+		return (ObjectDetector*)new MonoContourObjectDetector();
 
 	else if (contoursNumber > 1)
-		return (ObjectDetector*)new MultiContourObjectDetector(contoursNumber);
+		return (ObjectDetector*)new MultiContourObjectDetector();
 
 	else
 	{

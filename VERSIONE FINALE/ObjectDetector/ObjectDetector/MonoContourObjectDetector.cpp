@@ -7,8 +7,8 @@ using namespace std;
 using namespace cv;
 using namespace od;
 
-MonoContourObjectDetector::MonoContourObjectDetector(int aspectedContours) :
-ObjectDetector(aspectedContours)
+MonoContourObjectDetector::MonoContourObjectDetector() :
+ObjectDetector()
 {}
 
 bool MonoContourObjectDetector::findBaseShape(cv::Mat& baseImage)
@@ -26,6 +26,7 @@ bool MonoContourObjectDetector::findBaseShape(cv::Mat& baseImage)
 
 	_baseShape = compatibleContours[0][0];
 	_minContourPoints = compatibleContours[0][0].size();
+	_aspectedContours = 1;
 	
 	Utility::findCentroidsKeypoints(_baseShape, _baseKeypoints, Utility::CentroidDetectionMode::THREE_LOOP);
 
@@ -158,23 +159,20 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 	vector<vector<Point>> approxContours, originalQueryShapes;
 
-	vector<vector<Point>> biggerContour;
+
 	for (int i = 0; i < contours.size(); i++)
 	{
-		if (contours[i].size() > 400)
-			biggerContour.push_back(contours[i]);
-	}
 
-	for (int i = 0; i < biggerContour.size(); i++)
-	{
+		if (contours[i].size() < 400)
+			continue;
 
 		//if (contours[i].size() < _minContourPoints)
 		//	continue;
 
-		convexHull(biggerContour[i], hull, false);
+		convexHull(contours[i], hull, false);
 
-		double epsilon = biggerContour[i].size() * 0.003;
-		approxPolyDP(biggerContour[i], approx, epsilon, true);
+		double epsilon = contours[i].size() * 0.003;
+		approxPolyDP(contours[i], approx, epsilon, true);
 
 //#ifdef DEBUG_MODE		
 //		contoursImage = cv::Scalar(0);
@@ -188,7 +186,7 @@ vector<vector<vector<Point>>> MonoContourObjectDetector::findApproxContours(
 
 		if (imageTooBig)
 		{
-			Rect bounding = boundingRect(biggerContour[i]);
+			Rect bounding = boundingRect(contours[i]);
 
 #ifdef DEBUG_MODE
 			rectangle(contoursImage, bounding, Scalar(255));
@@ -284,7 +282,7 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 			c.y >= _attenuationRect.y &&
 			c.x <= (_attenuationRect.x + _attenuationRect.width) &&
 			c.y <= (_attenuationRect.y + _attenuationRect.height)))
-			attenuation = 0;
+			attenuation = 5;
 
 
 		double hamming = Utility::calculateContourPercentageCompatibility(approxContours[0][i], _baseShape);		
@@ -294,10 +292,8 @@ std::vector<std::vector<std::vector<cv::Point>>> MonoContourObjectDetector::proc
 		double correlation = Utility::correlationWithBase(contourKeypoints, _baseKeypoints);
 
 	
-//#ifdef DEBUG_MODE
 		cout << to_string(i) << " Contour Hamming Percentage " << " " << to_string(hamming - attenuation) << endl;
 		cout << "Correlation " << to_string(i) << " --- " << to_string(correlation) << endl << endl;
-//#endif
 		
 		if ((hamming - attenuation) < hammingThreshold)
 			continue;
